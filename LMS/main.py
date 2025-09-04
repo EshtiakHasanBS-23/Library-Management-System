@@ -49,7 +49,6 @@ from fastapi.staticfiles import StaticFiles
 from LMS.routers import auth, users, books, borrows, categories, reviews
 
 app = FastAPI()
-os.makedirs("media", exist_ok=True)
 app.mount("/media", StaticFiles(directory="media"), name="media")
 # Enable CORS if needed
 

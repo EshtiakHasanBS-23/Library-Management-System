@@ -89,6 +89,7 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
     is_admin = Column(Boolean, default=False)
+    image = Column(String(255), nullable=True)
 
     borrows = relationship("Borrow", back_populates="user", cascade="all, delete-orphan")
     reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")

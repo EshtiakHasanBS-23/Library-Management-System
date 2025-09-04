@@ -84,7 +84,7 @@ from LMS import models, schemas
 from LMS.database import get_db
 from LMS.routers.auth import get_current_user,admin_required
 
-router = APIRouter(prefix="/reviews", tags=["Reviews"])
+router = APIRouter(prefix="", tags=["Reviews"])
 
 # User: add review
 @router.post("/", response_model=schemas.ReviewOut)

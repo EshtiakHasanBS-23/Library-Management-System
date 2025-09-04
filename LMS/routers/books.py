@@ -163,13 +163,16 @@
 #     raise HTTPException(status_code=404,detail="Book not found")
 
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from LMS import models, schemas
 from LMS.database import get_db
 from LMS.routers.auth import get_current_user,admin_required
+import os, shutil
+from pathlib import Path
+from uuid import uuid4
 
-router = APIRouter(prefix="/books", tags=["Books"])
+router = APIRouter(prefix="", tags=["Books"])
 
 @router.get("/", response_model=list[schemas.Book])
 def get_books(db: Session = Depends(get_db),current_user = Depends(get_current_user)):
@@ -191,6 +194,32 @@ def create_book(book: schemas.BookCreate, db: Session = Depends(get_db),current_
     db.commit()
     db.refresh(new_book)
     return new_book
+
+MEDIA_DIR = "media/uploads"
+os.makedirs(MEDIA_DIR, exist_ok=True)
+
+@router.post("/{book_id}/image")
+def upload_book_image(book_id: int,
+                      file: UploadFile = File(...),
+                      db: Session = Depends(get_db),
+                      admin: models.User = Depends(admin_required)):
+    book = db.query(models.Book).filter(models.Book.id == book_id).first()
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+    
+    suffix = Path(file.filename).suffix
+    filename = f"{uuid4().hex}{suffix}"
+    file_path = os.path.join(MEDIA_DIR, filename)
+    
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    
+    # Store relative path in DB
+    book.image = f"/{file_path}"
+    db.commit()
+    db.refresh(book)
+    
+    return {"image_url": book.image}
 
 
 @router.delete("/{book_id}")

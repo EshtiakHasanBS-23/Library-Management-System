@@ -146,7 +146,7 @@ from LMS import models, schemas
 from LMS.database import get_db
 from LMS.routers.auth import get_current_user,admin_required
 
-router = APIRouter(prefix="/borrows", tags=["Borrows"])
+router = APIRouter(prefix="", tags=["Borrows"])
 
 # User: borrow book
 @router.post("/", response_model=schemas.BorrowOut)

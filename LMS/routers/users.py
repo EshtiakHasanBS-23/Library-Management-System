@@ -57,14 +57,17 @@
 #     user["id"] = len(users_db) + 1
 #     users_db.append(user)
 #     return user
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from LMS import models, schemas
 from LMS.database import get_db
 from LMS.routers.auth import get_current_user,admin_required
+import os, shutil
+from pathlib import Path
+from uuid import uuid4
 
-router = APIRouter(prefix="/users", tags=["Users"])
+router = APIRouter(prefix="", tags=["Users"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Admin: create user
@@ -84,6 +87,32 @@ def create_user(
     db.refresh(new_user)
     return new_user
 
+
+MEDIA_DIR = "media/uploads"
+os.makedirs(MEDIA_DIR, exist_ok=True)
+
+@router.post("/{user_id}/image")
+def upload_user_image(user_id: int,
+                      file: UploadFile = File(...),
+                      db: Session = Depends(get_db),
+                      admin: models.User = Depends(admin_required)):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    suffix = Path(file.filename).suffix
+    filename = f"{uuid4().hex}{suffix}"
+    file_path = os.path.join(MEDIA_DIR, filename)
+    
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    
+    # Store relative path in DB
+    user.image = f"/{file_path}"
+    db.commit()
+    db.refresh(user)
+    
+    return {"image_url": user.image}
 # Get all users (admin only)
 @router.get("/", response_model=list[schemas.User])
 def list_users(
