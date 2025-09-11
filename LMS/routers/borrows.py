@@ -140,6 +140,7 @@
 #     return {"message": "Book returned successfully", "borrow": borrow_record}
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from datetime import datetime
 from LMS import models, schemas
@@ -148,7 +149,12 @@ from LMS.routers.auth import get_current_user,admin_required
 
 router = APIRouter(prefix="", tags=["Borrows"])
 
-# User: borrow book
+@router.get("/")
+def list_borrows(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    return db.query(models.Borrow).filter(models.Borrow.status=="approved").all()
+
 @router.post("/", response_model=schemas.BorrowOut)
 def borrow_book(borrow: schemas.BorrowCreate, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
     book = db.query(models.Book).filter(models.Book.id == borrow.book_id).first()
@@ -191,7 +197,17 @@ def update_borrow_status(borrow_id: int, status: str, db: Session = Depends(get_
     db.refresh(borrow)
     return borrow
 
-# User: return book
+# User: return bookw_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    borrow = db.query(models.Borrow).filter(models.Borrow.id == borrow_id, models.Borrow.user_id==current_user.id).first()
+    if not borrow:
+        raise HTTPException(status_code=404, detail="Borrow not found")
+    borrow.returned_at = datetime.utcnow()
+    borrow.status = "returned"
+    borrow.copies+=1
+    db.commit()
+    db.refresh(borrow)
+    return borrow
+
 @router.put("/{borrow_id}/return")
 def return_book(borrow_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     borrow = db.query(models.Borrow).filter(models.Borrow.id == borrow_id, models.Borrow.user_id==current_user.id).first()
@@ -203,3 +219,32 @@ def return_book(borrow_id: int, db: Session = Depends(get_db), current_user: mod
     db.commit()
     db.refresh(borrow)
     return borrow
+@router.get("/pending/my")
+def my_pending_borrows(db: Session = Depends(get_db),current_user: models.User = Depends(get_current_user)):
+    pending_borrows = db.query(models.Borrow).filter(models.Borrow.user_id == current_user.id,models.Borrow.status == "pending").all()
+
+    return pending_borrows
+
+@router.get("/my")
+def my_borrow_list(db: Session = Depends(get_db),current_user: models.User = Depends(get_current_user)):
+    borrows = db.query(models.Borrow).filter(models.Borrow.user_id == current_user.id).all()
+    return borrows
+
+@router.get("/stats")
+def borrow_stats(db: Session = Depends(get_db), current_user: models.User = Depends(admin_required)):
+    total_books = db.query(func.sum(models.Book.copies)).scalar() or 0
+
+    borrowed_copies = db.query(func.count(models.Borrow.id)).filter(models.Borrow.status == "approved").scalar() or 0
+    returned_copies = db.query(func.count(models.Borrow.id)).filter(models.Borrow.status == "returned").scalar() or 0
+    pending_copies = db.query(func.count(models.Borrow.id)).filter(models.Borrow.status == "pending").scalar() or 0
+
+
+    available_copies = total_books - borrowed_copies
+
+    return {
+        "total_copies": total_books,
+        "available_copies": available_copies,
+        "borrowed_copies": borrowed_copies,
+        "returned_copies": returned_copies,
+        "pending_copies": pending_copies,
+    }

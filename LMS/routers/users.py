@@ -57,7 +57,7 @@
 #     user["id"] = len(users_db) + 1
 #     users_db.append(user)
 #     return user
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File,Form
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from LMS import models, schemas
@@ -90,6 +90,49 @@ def create_user(
 
 MEDIA_DIR = "media/uploads"
 os.makedirs(MEDIA_DIR, exist_ok=True)
+@router.put("/settings/my")
+def update_settings(
+    username: str = Form(None),
+    email: str = Form(None),
+    file: UploadFile | None = File(None),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    if username:
+        existing_user = db.query(models.User).filter(
+            models.User.username == username,
+            models.User.id != current_user.id
+        ).first()
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Username already taken")
+        current_user.username = username
+
+    if email:
+        current_user.email = email
+
+    if file is not None:
+        suffix = Path(file.filename).suffix
+        filename = f"user_{current_user.id}_{uuid4().hex}{suffix}"
+        file_path = os.path.join(MEDIA_DIR, filename)
+
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        current_user.image = f"/{file_path}"
+
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+
+    return {
+        "message": "Settings updated successfully",
+        "user": {
+            "id": current_user.id,
+            "username": current_user.username,
+            "email": current_user.email,
+            "photo": current_user.image
+        }
+    }
 
 @router.post("/{user_id}/image")
 def upload_user_image(user_id: int,
@@ -120,3 +163,13 @@ def list_users(
     current_user = Depends(admin_required),  # Admin required
 ):
     return db.query(models.User).all()
+@router.delete("/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db),current_user = Depends(admin_required)):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    db.delete(user)
+    db.commit()
+    return {"message": "User deleted"}
+
+
