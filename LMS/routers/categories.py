@@ -80,6 +80,13 @@ router = APIRouter(prefix="", tags=["Categories"])
 def list_categories(db: Session = Depends(get_db),current_user = Depends(get_current_user)):
     return db.query(models.Category).all()
 
+@router.get("/{category_id}", response_model=str)
+def categories_name_by_id(category_id:int,  db: Session = Depends(get_db),current_user = Depends(get_current_user)):
+    category= db.query(models.Category).filter(models.Category.id==category_id).first()
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+    return category.name
+
 # Admin: create category
 @router.post("/", response_model=schemas.CategoryOut)
 def create_category(category: schemas.CategoryCreate, db: Session = Depends(get_db),current_user = Depends(admin_required)):

@@ -2,7 +2,7 @@
 venv/
 
 # Ignore frontend folder
-frontend/
+
 
 # Ignore Python cache files
 __pycache__/
