@@ -158,7 +158,7 @@ def list_borrows(db: Session = Depends(get_db), current_user: models.User = Depe
 @router.post("/", response_model=schemas.BorrowOut)
 def borrow_book(borrow: schemas.BorrowCreate, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
     book = db.query(models.Book).filter(models.Book.id == borrow.book_id).first()
-    if not book or not book.copies<1:
+    if not book or  book.copies<1:
         raise HTTPException(status_code=400, detail="Book not available")
 
     borrow_record = models.Borrow(
@@ -191,10 +191,12 @@ def update_borrow_status(borrow_id: int, status: str, db: Session = Depends(get_
     if status not in ["approved", "rejected"]:
         raise HTTPException(status_code=400, detail="Invalid status")
     borrow.status = status
+    book = db.query(models.Book).filter(models.Book.id == borrow.book_id).first()
     if status=="approved":
-        borrow.copies-=1
+        book.copies-=1
     db.commit()
     db.refresh(borrow)
+    db.refresh(book)
     return borrow
 
 # User: return bookw_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
@@ -215,9 +217,11 @@ def return_book(borrow_id: int, db: Session = Depends(get_db), current_user: mod
         raise HTTPException(status_code=404, detail="Borrow not found")
     borrow.returned_at = datetime.utcnow()
     borrow.status = "returned"
-    borrow.copies+=1
+    book= db.query(models.Book).filter(models.Book.id == borrow.book_id).first()
+    book.copies+=1
     db.commit()
     db.refresh(borrow)
+    db.refresh(book)
     return borrow
 @router.get("/pending/my")
 def my_pending_borrows(db: Session = Depends(get_db),current_user: models.User = Depends(get_current_user)):
@@ -226,6 +230,10 @@ def my_pending_borrows(db: Session = Depends(get_db),current_user: models.User =
     return pending_borrows
 
 @router.get("/my")
+def my_borrow_list(db: Session = Depends(get_db),current_user: models.User = Depends(get_current_user)):
+    borrows = db.query(models.Borrow).filter(models.Borrow.user_id == current_user.id,models.Borrow.status=="approved").all()
+    return borrows
+@router.get("/my/history")
 def my_borrow_list(db: Session = Depends(get_db),current_user: models.User = Depends(get_current_user)):
     borrows = db.query(models.Borrow).filter(models.Borrow.user_id == current_user.id).all()
     return borrows
