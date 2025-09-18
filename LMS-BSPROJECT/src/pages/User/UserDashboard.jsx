@@ -4,14 +4,16 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import UserSidebar from "../../components/UserSidebar/UserSidebar";
-
+import axios from "axios";
 export default function UserDashboard() {
   useEffect(() => {
     document.title = "My Library";
   }, []);
 
+
+  
   // demo data (replace with API later)
-  const myLoans = [
+  /*const myLoans = [
     { id: "LO-2311", title: "Core Java", due: "2025-08-20", status: "Borrowed" },
     { id: "LO-2310", title: "SQL in 10 Minutes", due: "2025-08-10", status: "Overdue" },
   ];
@@ -22,7 +24,127 @@ export default function UserDashboard() {
   };
 
   // current signed-in user's display name (for "User Name" column)
-  const currentUserName = "Mark Wood";
+  const currentUserName = "Mark Wood";*/
+
+  /* const [myLoans, setMyLoans] = useState([]);
+  const [counts, setCounts] = useState({ borrowed: 0, overdue: 0, returned: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const currentUserName = localStorage.getItem("username") || "User";
+
+  // Map backend status → frontend display, focusing only on Borrowed / Overdue / Returned
+  const mapStatus = (loan) => {
+    const today = new Date();
+    const returnDate = loan.return_date ? new Date(loan.return_date) : null;
+
+    if (loan.status === "Approved") {
+      if (returnDate && returnDate < today) {
+        return "Overdue"; // expired
+      }
+      return "Borrowed";
+    }
+    if (loan.status === "Returned") {
+      return "Returned";
+    }
+    return null; // ignore Pending/Rejected
+  };
+
+  useEffect(() => {
+    const fetchMyHistory = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found. Please login.");
+
+        const response = await axios.get("http://127.0.0.1:8000/borrows/my/history", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        // Map statuses, filter out null (ignored states)
+        const loansWithStatus = response.data
+          .map((loan) => ({
+            ...loan,
+            status: mapStatus(loan),
+          }))
+          .filter((loan) => loan.status !== null);
+
+        setMyLoans(loansWithStatus);
+
+        // Counts
+        const borrowedCount = loansWithStatus.filter((x) => x.status === "Borrowed").length;
+        const overdueCount = loansWithStatus.filter((x) => x.status === "Overdue").length;
+        const returnedCount = loansWithStatus.filter((x) => x.status === "Returned").length;
+
+        setCounts({
+          borrowed: borrowedCount,
+          overdue: overdueCount,
+          returned: returnedCount,
+        });
+      } catch (err) {
+        console.error("Error fetching loan history:", err);
+        setError("Failed to load your loan history");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMyHistory();
+  }, []);*/
+
+ 
+
+  const [myLoans, setMyLoans] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const currentUserName = localStorage.getItem("username") || "User";
+
+  // Map backend statuses → frontend display
+  const mapStatus = (status) => {
+    switch (status) {
+      case "Approved":
+        return "Borrowed";
+      case "Pending":
+        return "Booked";
+      case "Returned":
+        return "Returned";
+      case "Rejected":
+        return "Rejected";
+      default:
+        return status;
+    }
+  };
+  useEffect(() => {
+    const fetchMyHistory = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found. Please login.");
+
+        const response = await axios.get("http://127.0.0.1:8000/borrows/my/history", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        // Map statuses for frontend display
+        const loansWithMappedStatus = response.data.map((loan) => ({
+          ...loan,
+          status: mapStatus(loan.status),
+        }));
+
+        setMyLoans(loansWithMappedStatus);
+      } catch (err) {
+        console.error("Error fetching loan history:", err);
+        setError("Failed to load your loan history");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMyHistory();
+  }, []);
 
   // small badge style for status
   const statusBadge = (s) => {
@@ -79,7 +201,7 @@ export default function UserDashboard() {
         <h1 className="text-xl md:text-2xl font-bold text-gray-800">Welcome back!</h1>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {/* <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div className="bg-white rounded shadow p-4 text-center">
             <p className="text-sm text-gray-500">Borrowed</p>
             <p className="text-xl font-bold text-gray-800">{counts.borrowed}</p>
@@ -92,7 +214,7 @@ export default function UserDashboard() {
             <p className="text-sm text-gray-500">Returned</p>
             <p className="text-xl font-bold text-gray-800">{counts.returned}</p>
           </div>
-        </div>
+        </div> */}
 
         {/* My Loans */}
         <div className="bg-white rounded shadow p-4">
@@ -120,9 +242,9 @@ export default function UserDashboard() {
                 {myLoans.map((l, i) => (
                   <tr key={l.id} className="border-b border-gray-200">
                     <td className="py-2 px-3">{i + 1}</td>
-                    <td className="py-2 px-3 font-medium">{l.title}</td>
-                    <td className="py-2 px-3">{currentUserName}</td>
-                    <td className="py-2 px-3">{l.due}</td>
+                    <td className="py-2 px-3 font-medium">{l.book_title}</td>
+                    <td className="py-2 px-3">{l.username}</td>
+                    <td className="py-2 px-3">{l.return_date}</td>
                     <td className="py-2 px-3">
                       <span className={statusBadge(l.status)}>{l.status}</span>
                     </td>

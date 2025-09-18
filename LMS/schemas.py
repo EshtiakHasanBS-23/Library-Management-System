@@ -166,7 +166,9 @@ class BorrowCreate(BaseModel):
 class BorrowOut(BaseModel):
     id: int
     user_id: int
+    username: str
     book_id: int
+    book_title: str
     borrow_date: datetime
     return_date: datetime
     returned_at: Optional[datetime] = None

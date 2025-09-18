@@ -17,22 +17,89 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import Sidebar from "../../components/DashboardSidebar/DashboardSidebar";
-
+import axios from "axios";
 export default function Dashboard() {
   useEffect(() => {
     document.title = "Library Dashboard";
   }, []);
 
+  const [stats, setStats] = useState({
+    borrowed_copies: 0,
+    returned_copies: 0,
+    pending_copies: 0,
+    total_copies: 0,
+    available_copies: 0,
+  });
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const token = localStorage.getItem("token"); // get JWT token
+        if (!token) throw new Error("No token found. Please login.");
+
+        const response = await axios.get("http://localhost:8000/borrows/stats", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        setStats(response.data);
+      } catch (err) {
+        console.error("Error fetching stats:", err);
+        setError("Failed to load stats");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+  const dashboardItems = [
+    { label: "Borrowed Books", value: stats.borrowed_copies },
+    { label: "Returned Books", value: stats.returned_copies },
+    { label: "Borrows Pending", value: stats.pending_copies },
+    { label: "Total Books", value: stats.total_copies },
+    { label: "Available Books", value: stats.available_copies },
+    // Add "New Members" if you have an API for it
+  ];
   // --- Borrow Request demo data (replace with API later) ---
-  const [requests, setRequests] = useState([
+  /*const [requests, setRequests] = useState([
     { book: "Core Java", user: "Sadia Prova", borrowed: "29/07/2025", returned: "03/08/2025" },
     { book: "SQL in 10 Minutes", user: "Arman Hasan", borrowed: "01/08/2025", returned: "06/08/2025" },
-  ]);
+  ]);*/
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+   useEffect(() => {
+    const fetchPendingRequests = async () => {
+      try {
+    const token = localStorage.getItem("token"); // get your JWT token
+    if (!token) {
+      throw new Error("No token found, please login");
+    }
 
+    const response = await axios.get("http://localhost:8000/borrows/pending", {
+      headers: {
+        Authorization: `Bearer ${token}`, // attach token here
+      },
+    });
+
+    setRequests(response.data);
+  } catch (err) {
+    console.error("Error fetching pending requests:", err);
+    setError("Failed to load borrow requests");
+  } finally {
+    setLoading(false);
+  }
+    };
+
+    fetchPendingRequests();
+  }, []);
+
+  
   // Confirmation modal state
-  const [confirm, setConfirm] = useState({ open: false, type: null, index: -1 });
-  const openConfirm = (type, index) => setConfirm({ open: true, type, index });
-  const closeConfirm = () => setConfirm({ open: false, type: null, index: -1 });
+  const [confirm, setConfirm] = useState({ open: false, type: null, index: -1, id: null });
+  const openConfirm = (type, index,id) => setConfirm({ open: true, type, index,id: requests[index]?.id });
+  const closeConfirm = () => setConfirm({ open: false, type: null, index: -1, id: null });
 
   // Toast (2s)
   const [toast, setToast] = useState({ show: false, type: "accept", message: "" });
@@ -41,14 +108,39 @@ export default function Dashboard() {
     setTimeout(() => setToast({ show: false, type, message: "" }), 2000);
   };
 
-  const doConfirm = () => {
+  /*const doConfirm = () => {
     const { type, index } = confirm;
     if (index > -1) {
       setRequests((prev) => prev.filter((_, i) => i !== index));
       showToast(type, type === "accept" ? "Request accepted" : "Request rejected");
     }
     closeConfirm();
-  };
+  };*/
+
+  const doConfirm = async () => {
+  const { type, index, id } = confirm; // make sure confirm has borrow.id also
+  if (index < 0 || !id) console.log("Invalid confirm state:", confirm);
+
+  try {
+    const token = localStorage.getItem("token");
+
+    // Call backend API
+    const res = await axios.put(
+       `http://localhost:8000/borrows/${id}/status?status=${type === "accept" ? "approved" : "rejected"}`,
+  {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    // Update local UI state if API success
+    setRequests((prev) => prev.filter((_, i) => i !== index));
+    showToast(type, type === "accept" ? "Request accepted" : "Request rejected");
+  } catch (err) {
+    console.error("Failed to update borrow status:", err.response?.data || err);
+    showToast("error", "Failed to update borrow status");
+  }
+
+  closeConfirm();
+};
 
   // -------------------- WEEKLY LINE CHART --------------------
   const WEEK_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -62,6 +154,8 @@ export default function Dashboard() {
     ],
     []
   );
+
+  
 
   // Smooth path helpers (quadratic mid-point)
   const chartBox = { w: 720, h: 200, padX: 36, padY: 20 };
@@ -121,7 +215,34 @@ export default function Dashboard() {
       <Sidebar />
       {/* <aside className="w-64 bg-white shadow-md px-4 py-6 flex flex-col justify-between">
         <div>
-          <h2 className="text-xl font-bold mb-6">Library</h2>
+          <h2 className="text-xl font-bold mb-6">Library</h2>const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+   useEffect(() => {
+    const fetchPendingRequests = async () => {
+      try {
+    const token = localStorage.getItem("token"); // get your JWT token
+    if (!token) {
+      throw new Error("No token found, please login");
+    }
+
+    const response = await axios.get("http://localhost:8000/borrows/pending", {
+      headers: {
+        Authorization: `Bearer ${token}`, // attach token here
+      },
+    });
+
+    setRequests(response.data);
+  } catch (err) {
+    console.error("Error fetching pending requests:", err);
+    setError("Failed to load borrow requests");
+  } finally {
+    setLoading(false);
+  }
+    };
+
+    fetchPendingRequests();
+  }, []);
           <ul className="space-y-3">
             <li>
               <Link to="/dashboard" className="flex items-center gap-2 text-sky-600 font-medium">
@@ -176,14 +297,7 @@ export default function Dashboard() {
       <main className="flex-1 p-6 space-y-6">
         {/* Top Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: "Borrowed Books", value: 3504 },
-            { label: "Returned Books", value: 683 },
-            { label: "Overdue Books", value: 145 },
-            { label: "Total Books", value: 5654 },
-            { label: "New Members", value: 120 },
-            { label: "Borrows Pending", value: 222 },
-          ].map((item, i) => (
+          {dashboardItems.map((item, i) => (
             <div key={i} className="bg-white rounded shadow p-4 text-center">
               <p className="text-sm text-gray-500">{item.label}</p>
               <p className="text-xl font-bold text-gray-800">{item.value}</p>
@@ -338,7 +452,7 @@ export default function Dashboard() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left border-b border-gray-200">
-                <th>#</th>
+                <th className="w-10">#</th>
                 <th>Book name</th>
                 <th>User name</th>
                 <th>Borrowed Date</th>
@@ -350,10 +464,10 @@ export default function Dashboard() {
               {requests.map((r, i) => (
                 <tr key={`${r.book}__${r.user}__${i}`} className="border-b border-gray-200">
                   <td>{i + 1}</td>
-                  <td className="font-medium">{r.book}</td>
-                  <td>{r.user}</td>
-                  <td>{r.borrowed}</td>
-                  <td>{r.returned}</td>
+                  <td className="font-medium">{r.book_id}</td>
+                  <td>{r.user_id}</td>
+                  <td>{r.borrow_date}</td>
+                  <td>{r.return_date}</td>
                   <td className="text-center">
                     <div className="flex items-center justify-center gap-2">
                       <button
@@ -420,9 +534,9 @@ export default function Dashboard() {
                     {confirm.index > -1 && (
                       <p className="mt-1 text-sm text-gray-600">
                         <span className="font-medium">
-                          {requests[confirm.index]?.book}
+                          {requests[confirm.index]?.book_id}
                         </span>{" "}
-                        — {requests[confirm.index]?.user}
+                        — {requests[confirm.index]?.user_id}
                       </p>
                     )}
                   </div>
@@ -484,7 +598,6 @@ export default function Dashboard() {
     </div>
   );
 }
-
 
 
 
