@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import UserSidebar from "../../components/UserSidebar/UserSidebar";
 import { Upload, User2, CheckCircle2, Search } from "lucide-react";
-
+import axios from "axios";
 export default function UserSettings() {
   useEffect(() => {
     document.title = "Settings";
@@ -18,7 +18,7 @@ export default function UserSettings() {
   const [photo, setPhoto] = useState(null);      // file
   const [photoUrl, setPhotoUrl] = useState("");  // preview (before save)
   const [avatarUrl, setAvatarUrl] = useState(""); // committed avatar (shows in header after Done)
-
+  const [message, setMessage] = useState("");
   // header search
   const [q, setQ] = useState("");
 
@@ -41,7 +41,7 @@ export default function UserSettings() {
   };
 
   // handle upload (click or drop)
-  const onFile = (file) => {
+  /*const onFile = (file) => {
     if (!file) return;
     const okTypes = ["image/png", "image/jpeg", "image/gif", "image/svg+xml"];
     if (!okTypes.includes(file.type)) {
@@ -51,16 +51,84 @@ export default function UserSettings() {
     setPhotoUrl(URL.createObjectURL(file));
   };
 
-  const onDrop = (e) => {
+  const onDrop = async (e) => {
     e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    onFile(file);
+    /*const file = e.dataTransfer.files?.[0];
+    onFile(file);*/
+   /* e.preventDefault();
+
+    const token = localStorage.getItem("token");
+    const formData = new FormData();
+    formData.append("username", name);
+    formData.append("email", email);
+    if (image) {
+      formData.append("image", photo);
+    }
+
+    try {
+      const res = await axios.put("http://127.0.0.1:8000/users/settings/my", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      setMessage("Profile updated successfully!");
+      console.log("Updated User:", res.data);
+    } catch (err) {
+      setMessage("Failed to update profile");
+      console.error(err);
+    }
+
   };
 
   const onSave = () => {
     // Show confirmation popup. We don't commit avatar yet.
+
+
+    
     setSavePopup(true);
-  };
+  };*/
+
+const onFile = (file) => {
+  if (!file) return;
+  const okTypes = ["image/png", "image/jpeg", "image/gif", "image/svg+xml"];
+  if (!okTypes.includes(file.type)) {
+    return;
+  }
+  setPhoto(file);
+  setPhotoUrl(URL.createObjectURL(file)); // preview
+};
+
+const onDrop = (e) => {
+  e.preventDefault();
+
+};
+
+const onSave = async() => {
+
+  const token = localStorage.getItem("token");
+  const formData = new FormData();
+  if (name && name.trim() !== "") formData.append("username", name);
+  if (email && email.trim() !== "") formData.append("email", email);
+  if (photo) formData.append("image", photo);
+  try {
+    console.log("Submitting form data:", formData);
+    const res = await axios.put("http://127.0.0.1:8000/users/settings/my", formData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    setMessage("Profile updated successfully!");
+    console.log("Updated User:", res.data);
+  } catch (err) {
+    setMessage("Failed to update profile");
+    console.error(err);
+  }
+  setSavePopup(true);
+};
+
+
 
   // When user clicks Done in popup: commit avatar to header
   const onPopupDone = () => {
@@ -154,7 +222,8 @@ export default function UserSettings() {
               <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden ring-1 ring-gray-200">
                 {photoUrl ? (
                   <img
-                    src={photoUrl}
+                    // src={photoUrl}
+                    src={`http://127.0.0.1:8000${photoUrl}`}
                     alt="avatar preview"
                     className="w-full h-full object-cover"
                   />

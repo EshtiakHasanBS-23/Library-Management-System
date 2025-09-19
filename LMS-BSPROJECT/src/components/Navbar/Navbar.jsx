@@ -26,7 +26,6 @@ export default function Navbar() {
   const [openNoti, setOpenNoti] = useState(false);
   const [openMsg, setOpenMsg] = useState(false);
   const [openUser, setOpenUser] = useState(false);
-
   // NEW: grid/app-launcher menu
   const [openGrid, setOpenGrid] = useState(false);
 
@@ -277,7 +276,7 @@ export default function Navbar() {
                 </div>
               </div>
             )}
-
+            
             {/* User menu */}
             {openUser && (
               <div className="absolute right-0 top-10 w-56 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
@@ -316,7 +315,11 @@ export default function Navbar() {
                 <div className="border-t">
                   <button
                     className="w-full px-4 py-2 text-left text-sky-600 font-semibold hover:bg-gray-50"
-                    onClick={toggleSignIn}
+                    // onClick={'toggleSignIn'}
+                     onClick={() => {
+                        setOpenUser(false);
+                        navigate("/login");
+                      }}
                   >
                     {user ? "Sign Out" : "Sign In"}
                   </button>

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import UserSidebar from "../../components/UserSidebar/UserSidebar";
 import axios from "axios";
+import { parseISO, isBefore } from "date-fns";
 export default function UserDashboard() {
   useEffect(() => {
     document.title = "My Library";
@@ -98,19 +99,24 @@ export default function UserDashboard() {
   const [myLoans, setMyLoans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const [counts, setCounts] = useState({ borrowed: 0, overdue: 0, returned: 0 });
   const currentUserName = localStorage.getItem("username") || "User";
 
   // Map backend statuses → frontend display
   const mapStatus = (status) => {
+    const today = new Date();
+    const returnDate = myLoans.return_date ? parseISO(myLoans.return_date) : null;
     switch (status) {
-      case "Approved":
+      case "approved":
+        if (returnDate && returnDate < today) {
+          return "Overdue";
+      }
         return "Borrowed";
-      case "Pending":
+      case "pending":
         return "Booked";
-      case "Returned":
+      case "returned":
         return "Returned";
-      case "Rejected":
+      case "rejected":
         return "Rejected";
       default:
         return status;
@@ -135,6 +141,17 @@ export default function UserDashboard() {
         }));
 
         setMyLoans(loansWithMappedStatus);
+
+
+        const borrowedCount = loansWithMappedStatus.filter((x) => x.status === "Borrowed").length;
+        const overdueCount = loansWithMappedStatus.filter((x) => x.status === "Overdue").length;
+        const returnedCount = loansWithMappedStatus.filter((x) => x.status === "Returned").length;
+
+        setCounts({
+          borrowed: borrowedCount,
+          overdue: overdueCount,
+          returned: returnedCount,
+        });
       } catch (err) {
         console.error("Error fetching loan history:", err);
         setError("Failed to load your loan history");
@@ -182,6 +199,33 @@ export default function UserDashboard() {
     setTimeout(() => setToast({ show: false, msg: "" }), 1800);
   };
 
+const returnLoan = async (loan) => {
+  const token = localStorage.getItem("token");
+  try {
+    const res = await axios.put(
+      `http://127.0.0.1:8000/borrows/${loan.id}/return`,
+      {},
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    // ✅ Update loan status in state
+    setMyLoans((prev) =>
+      prev.map((l) =>
+        l.id === loan.id
+          ? { ...l, status: "returned", return_date: new Date().toISOString() }
+          : l
+      )
+    );
+
+    console.log("Returned Loan:", res.data);
+  } catch (err) {
+    console.error("Failed to return loan:", err);
+  }
+};
+
+
   const confirmModal = () => {
     if (modal.type === "expected") {
       showToast("Expected date saved");
@@ -201,7 +245,7 @@ export default function UserDashboard() {
         <h1 className="text-xl md:text-2xl font-bold text-gray-800">Welcome back!</h1>
 
         {/* Stats */}
-        {/* <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div className="bg-white rounded shadow p-4 text-center">
             <p className="text-sm text-gray-500">Borrowed</p>
             <p className="text-xl font-bold text-gray-800">{counts.borrowed}</p>
@@ -214,7 +258,7 @@ export default function UserDashboard() {
             <p className="text-sm text-gray-500">Returned</p>
             <p className="text-xl font-bold text-gray-800">{counts.returned}</p>
           </div>
-        </div> */}
+        </div>
 
         {/* My Loans */}
         <div className="bg-white rounded shadow p-4">
@@ -244,7 +288,7 @@ export default function UserDashboard() {
                     <td className="py-2 px-3">{i + 1}</td>
                     <td className="py-2 px-3 font-medium">{l.book_title}</td>
                     <td className="py-2 px-3">{l.username}</td>
-                    <td className="py-2 px-3">{l.return_date}</td>
+                    <td className="py-2 px-3">{l.return_date.split('T')[0]}</td>
                     <td className="py-2 px-3">
                       <span className={statusBadge(l.status)}>{l.status}</span>
                     </td>
@@ -259,7 +303,7 @@ export default function UserDashboard() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => openModal("return", l)}
+                          onClick={() => returnLoan(l)}
                           className="inline-flex items-center gap-1 rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-green-400"
                         >
                           Return

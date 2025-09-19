@@ -464,10 +464,10 @@ export default function Dashboard() {
               {requests.map((r, i) => (
                 <tr key={`${r.book}__${r.user}__${i}`} className="border-b border-gray-200">
                   <td>{i + 1}</td>
-                  <td className="font-medium">{r.book_id}</td>
-                  <td>{r.user_id}</td>
-                  <td>{r.borrow_date}</td>
-                  <td>{r.return_date}</td>
+                  <td className="font-medium">{r.book_title}</td>
+                  <td>{r.username}</td>
+                  <td>{r.borrow_date.split('T')[0]}</td>
+                  <td>{r.return_date.split('T')[0]}</td>
                   <td className="text-center">
                     <div className="flex items-center justify-center gap-2">
                       <button

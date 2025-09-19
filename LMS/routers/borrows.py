@@ -33,9 +33,9 @@ def borrow_book(borrow: schemas.BorrowCreate, db: Session = Depends(get_db), cur
     return {
         "id": borrow_record.id,
         "user_id": borrow_record.user_id,
-        "username": current_user.username,   # ✅ from logged-in user
+        "username": current_user.username,
         "book_id": borrow_record.book_id,
-        "book_title": book.title,           # ✅ from book table
+        "book_title": book.title,
         "borrow_date": borrow_record.borrow_date,
         "return_date": borrow_record.return_date,
         "status": borrow_record.status,
@@ -46,8 +46,21 @@ def borrow_book(borrow: schemas.BorrowCreate, db: Session = Depends(get_db), cur
 def list_pending_borrows(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Not authorized")
-    return db.query(models.Borrow).filter(models.Borrow.status=="pending").all()
-
+    borrows=(db.query(models.Borrow).options(joinedload(models.Borrow.book), 
+                 joinedload(models.Borrow.user)).filter(models.Borrow.status=="pending").all())
+    return [
+        {
+            "id": b.id,
+            "user_id": b.user_id,
+            "username": b.user.username,
+            "book_id": b.book_id,
+            "book_title": b.book.title,
+            "borrow_date": b.borrow_date,
+            "return_date": b.return_date,
+            "status": b.status,
+        }
+        for b in borrows
+    ]
 # Admin: approve/reject borrow
 @router.put("/{borrow_id}/status")
 def update_borrow_status(borrow_id: int, status: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
@@ -114,7 +127,7 @@ def my_borrow_history(
     borrows = (
         db.query(models.Borrow)
         .options(joinedload(models.Borrow.book), joinedload(models.Borrow.user))
-        .filter(models.Borrow.user_id == current_user.id)
+        .filter(models.Borrow.user_id == current_user.id,models.Borrow.status != "rejected")
         .all()
     )
 
