@@ -284,6 +284,19 @@ useEffect(() => {
             : "https://via.placeholder.com/150",
         });
         setBookData(normalize(b));
+        const resAll = await axios.get(`http://localhost:8000/books/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const others = (resAll.data || [])
+        .filter((book) => String(book.id) !== String(id))
+        .filter((book) => book.category_id === b.category_id) 
+        .slice(0, 3)
+        .map(normalize)
+        .filter(Boolean);
+
+      setRelatedBooks(others);
+
+
       } catch (err) {
         console.error("Failed to fetch book details:", err);
         if (err.response?.status === 401 || err.response?.status === 403) {

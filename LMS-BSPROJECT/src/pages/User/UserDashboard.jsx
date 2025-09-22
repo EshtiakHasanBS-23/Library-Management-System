@@ -94,7 +94,6 @@ export default function UserDashboard() {
     fetchMyHistory();
   }, []);*/
 
- 
 
   const [myLoans, setMyLoans] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -103,12 +102,13 @@ export default function UserDashboard() {
   const currentUserName = localStorage.getItem("username") || "User";
 
   // Map backend statuses → frontend display
-  const mapStatus = (status) => {
+  const mapStatus = (loan) => {
     const today = new Date();
-    const returnDate = myLoans.return_date ? parseISO(myLoans.return_date) : null;
+    const returnDate = loan.return_date ? parseISO(loan.return_date) : null;
+    const status = loan.status;
     switch (status) {
       case "approved":
-        if (returnDate && returnDate < today) {
+        if (returnDate && isBefore(returnDate, today)) {
           return "Overdue";
       }
         return "Borrowed";
@@ -119,7 +119,7 @@ export default function UserDashboard() {
       case "rejected":
         return "Rejected";
       default:
-        return status;
+        return "Unknown";
     }
   };
   useEffect(() => {
@@ -137,15 +137,16 @@ export default function UserDashboard() {
         // Map statuses for frontend display
         const loansWithMappedStatus = response.data.map((loan) => ({
           ...loan,
-          status: mapStatus(loan.status),
+          displayStatus: mapStatus(loan),
         }));
+        console.log("Fetched loans from API:", response.data);
 
         setMyLoans(loansWithMappedStatus);
 
 
-        const borrowedCount = loansWithMappedStatus.filter((x) => x.status === "Borrowed").length;
-        const overdueCount = loansWithMappedStatus.filter((x) => x.status === "Overdue").length;
-        const returnedCount = loansWithMappedStatus.filter((x) => x.status === "Returned").length;
+        const borrowedCount = loansWithMappedStatus.filter((x) => x.displayStatus === "Borrowed").length;
+        const overdueCount = loansWithMappedStatus.filter((x) => x.displayStatus === "Overdue").length;
+        const returnedCount = loansWithMappedStatus.filter((x) => x.displayStatus === "Returned").length;
 
         setCounts({
           borrowed: borrowedCount,
@@ -162,6 +163,7 @@ export default function UserDashboard() {
 
     fetchMyHistory();
   }, []);
+
 
   // small badge style for status
   const statusBadge = (s) => {
@@ -235,6 +237,11 @@ const returnLoan = async (loan) => {
     closeModal();
   };
 
+  const loansWithStatus = myLoans.map((loan) => ({
+  ...loan,
+  displayStatus: mapStatus(loan),
+}));
+
   return (
     <div className="min-h-screen flex bg-gray-100">
       {/* Reused sidebar */}
@@ -290,7 +297,7 @@ const returnLoan = async (loan) => {
                     <td className="py-2 px-3">{l.username}</td>
                     <td className="py-2 px-3">{l.return_date.split('T')[0]}</td>
                     <td className="py-2 px-3">
-                      <span className={statusBadge(l.status)}>{l.status}</span>
+                      <span className={statusBadge(mapStatus(l))}>{mapStatus(l)}</span>
                     </td>
                     <td className="py-2 px-3 text-center">
                       <div className="flex items-center justify-center gap-2">
