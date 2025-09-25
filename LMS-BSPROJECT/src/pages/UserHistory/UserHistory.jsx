@@ -2,13 +2,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search, Filter, Eye, X } from "lucide-react";
 import UserSidebar from "../../components/UserSidebar/UserSidebar";
-
+import axios from "axios";
 const badge = (type) => {
   const base = "inline-flex items-center rounded px-2 py-0.5 text-xs font-medium";
   switch (type) {
     case "Borrowed":  return `${base} bg-sky-100 text-sky-700`;
     case "Returned":  return `${base} bg-green-100 text-green-700`;
     case "Booked":    return `${base} bg-amber-100 text-amber-700`;
+    case "Overdue":   return `${base} bg-amber-100 text-amber-700`;
     case "Donation":  return `${base} bg-violet-100 text-violet-700`;
     default:          return `${base} bg-gray-100 text-gray-700`;
   }
@@ -18,26 +19,68 @@ export default function UserHistory() {
   useEffect(() => { document.title = "History"; }, []);
 
   // Demo dataset (hook up to API later)
-  const rows = [
+  /*const rows = [
     { id: "HIS-1015", book: "Core Java", user: "Mark Wood",   type: "Borrowed", borrowedOn: "2025-08-01", dueOn: "2025-08-15", returnedOn: "", note: "First-time borrower" },
     { id: "HIS-1014", book: "Clean Code", user: "Sadia Prova", type: "Returned", borrowedOn: "2025-07-10", dueOn: "2025-07-20", returnedOn: "2025-07-18", note: "Returned in good condition" },
     { id: "HIS-1013", book: "Design Patterns", user: "Arman Hasan", type: "Booked", bookedOn: "2025-08-11", note: "Reservation for next week" },
     { id: "HIS-1012", book: "SQL in 10 Minutes", user: "Mark Wood", type: "Borrowed", borrowedOn: "2025-08-05", dueOn: "2025-08-19" },
     { id: "HIS-1011", book: "Eloquent JavaScript", user: "Nadia Islam", type: "Donation", donatedOn: "2025-08-12", note: "Like new, paperback" },
     { id: "HIS-1010", book: "You Don't Know JS", user: "Mark Wood", type: "Returned", borrowedOn: "2025-06-28", dueOn: "2025-07-10", returnedOn: "2025-07-09" },
-  ];
+  ];*/
 
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
   // Filters / search
   const [q, setQ] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
+  const token = localStorage.getItem("token");
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (!token) {
+        alert("You must be logged in to view your history");
+        return;
+      }
+      try {
+        const res = await axios.get("http://127.0.0.1:8000/borrows/my/history", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setRows(res.data || []);
+      } catch (err) {
+        console.error("Failed to fetch history:", err);
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          alert("You are not authorized. Please login.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchHistory();
+  }, [token]);
 
+  const mapStatusLabel = (status, dueOn) => {
+  if (!status) return "—";
+
+  const now = new Date();
+  switch (status.toLowerCase()) {
+    case "pending":
+      return "Booked";
+    case "approved":
+      if (dueOn && new Date(dueOn) < now) return "Overdue";
+      return "Borrowed";
+    case "returned":
+      return "Returned";
+    default:
+      return status; // fallback
+  }
+};
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
     return rows.filter((r) => {
-      const matchesType   = typeFilter === "All" || r.type === typeFilter;
+      const statusLabel = mapStatusLabel(r.status, r.return_date);
+      const matchesType   = typeFilter === "All" || statusLabel === typeFilter;
       const matchesSearch =
         !term ||
-        [r.id, r.book, r.user, r.type]
+        [r.id, r.book_title, r.username, r.status]
           .filter(Boolean)
           .some((v) => String(v).toLowerCase().includes(term));
       return matchesType && matchesSearch;
@@ -67,7 +110,7 @@ export default function UserHistory() {
                   <Filter size={16} /> Type:
                 </span>
                 <div className="flex items-center gap-2">
-                  {["All", "Borrowed", "Returned", "Booked", "Donation"].map((t) => (
+                  {["All", "Borrowed", "Returned", "Booked", "Overdue","Donation"].map((t) => (
                     <button
                       key={t}
                       type="button"
@@ -107,10 +150,10 @@ export default function UserHistory() {
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="text-sm text-gray-500">#{i + 1}</p>
-                      <span className={badge(r.type)}>{r.type}</span>
+                      <span className={badge(r.type)}>{mapStatusLabel(r.status, r.return_date)}</span>
                     </div>
-                    <h3 className="mt-1 font-semibold text-gray-900">{r.book}</h3>
-                    <p className="text-sm text-gray-600">{r.user}</p>
+                    <h3 className="mt-1 font-semibold text-gray-900">{r.book_title}</h3>
+                    <p className="text-sm text-gray-600">{r.username}</p>
                   </div>
                   <button
                     type="button"
@@ -124,15 +167,15 @@ export default function UserHistory() {
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <div className="rounded border border-gray-200 p-2">
                     <p className="text-[11px] text-gray-500">Borrowed On</p>
-                    <p className="text-sm text-gray-800">{r.borrowedOn || "—"}</p>
+                    <p className="text-sm text-gray-800">{r.borrow_date.split("T")[0] || "—"}</p>
                   </div>
                   <div className="rounded border border-gray-200 p-2">
                     <p className="text-[11px] text-gray-500">Due Date</p>
-                    <p className="text-sm text-gray-800">{r.dueOn || "—"}</p>
+                    <p className="text-sm text-gray-800">{r.return_date.split("T")[0] || "—"}</p>
                   </div>
                   <div className="rounded border border-gray-200 p-2 col-span-2">
                     <p className="text-[11px] text-gray-500">Returned On</p>
-                    <p className="text-sm text-gray-800">{r.returnedOn || "—"}</p>
+                    <p className="text-sm text-gray-800">{r.returned_at ? r.returned_at.split("T")[0] : "—"}</p>
                   </div>
                   {r.bookedOn && (
                     <div className="rounded border border-gray-200 p-2 col-span-2">
@@ -174,12 +217,12 @@ export default function UserHistory() {
                   {filtered.map((r, i) => (
                     <tr key={r.id} className="even:bg-gray-50">
                       <td className="py-3 px-4">{i + 1}</td>
-                      <td className="py-3 px-4 font-medium text-gray-800">{r.book}</td>
-                      <td className="py-3 px-4 text-gray-700">{r.user}</td>
-                      <td className="py-3 px-4 text-gray-700">{r.borrowedOn || "—"}</td>
-                      <td className="py-3 px-4 text-gray-700">{r.dueOn || "—"}</td>
-                      <td className="py-3 px-4 text-gray-700">{r.returnedOn || "—"}</td>
-                      <td className="py-3 px-4"><span className={badge(r.type)}>{r.type}</span></td>
+                      <td className="py-3 px-4 font-medium text-gray-800">{r.book_title}</td>
+                      <td className="py-3 px-4 text-gray-700">{r.username}</td>
+                      <td className="py-3 px-4 text-gray-700">{r.borrow_date.split('T')[0] || "—"}</td>
+                      <td className="py-3 px-4 text-gray-700">{r.return_date.split('T')[0] || "—"}</td>
+                      <td className="py-3 px-4 text-gray-700">{r.returned_at ? r.returned_at.split("T")[0] : "—"}</td>
+                      <td className="py-3 px-4"><span className={badge(r.status)}>{mapStatusLabel(r.status, r.return_date)}</span></td>
                       <td className="py-3 px-4 text-center">
                         <button
                           type="button"
@@ -225,14 +268,14 @@ export default function UserHistory() {
 
               <div className="px-4 md:px-6 py-4 md:py-5 space-y-3 text-sm">
                 <div className="flex justify-between gap-4"><span className="text-gray-500">Record ID</span><span className="font-medium text-gray-800">{detail.id}</span></div>
-                <div className="flex justify-between gap-4"><span className="text-gray-500">Book</span><span className="font-medium text-gray-800">{detail.book}</span></div>
-                <div className="flex justify-between gap-4"><span className="text-gray-500">User</span><span className="font-medium text-gray-800">{detail.user}</span></div>
-                <div className="flex justify-between gap-4"><span className="text-gray-500">Type</span><span className={badge(detail.type)}>{detail.type}</span></div>
+                <div className="flex justify-between gap-4"><span className="text-gray-500">Book</span><span className="font-medium text-gray-800">{detail.book_title}</span></div>
+                <div className="flex justify-between gap-4"><span className="text-gray-500">User</span><span className="font-medium text-gray-800">{detail.username}</span></div>
+                <div className="flex justify-between gap-4"><span className="text-gray-500">Type</span><span className={badge(detail.status)}>{mapStatusLabel(detail.status, detail.return_date)}</span></div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
-                  <div className="rounded border border-gray-200 p-3"><p className="text-xs text-gray-500 mb-1">Borrowed On</p><p className="font-medium text-gray-800">{detail.borrowedOn || "—"}</p></div>
-                  <div className="rounded border border-gray-200 p-3"><p className="text-xs text-gray-500 mb-1">Due Date</p><p className="font-medium text-gray-800">{detail.dueOn || "—"}</p></div>
-                  <div className="rounded border border-gray-200 p-3"><p className="text-xs text-gray-500 mb-1">Returned On</p><p className="font-medium text-gray-800">{detail.returnedOn || "—"}</p></div>
+                  <div className="rounded border border-gray-200 p-3"><p className="text-xs text-gray-500 mb-1">Borrowed On</p><p className="font-medium text-gray-800">{detail.borrow_date.split("T")[0] || "—"}</p></div>
+                  <div className="rounded border border-gray-200 p-3"><p className="text-xs text-gray-500 mb-1">Due Date</p><p className="font-medium text-gray-800">{detail.return_date.split("T")[0] || "—"}</p></div>
+                  <div className="rounded border border-gray-200 p-3"><p className="text-xs text-gray-500 mb-1">Returned On</p><p className="font-medium text-gray-800">{detail.returned_at ? detail.returned_at.split("T")[0] : "—"}</p></div>
                 </div>
 
                 {(detail.bookedOn || detail.donatedOn) && (

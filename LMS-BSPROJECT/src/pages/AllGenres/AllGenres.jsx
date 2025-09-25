@@ -5,7 +5,7 @@ import books from "../../data/sampleBooks";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import BookCard from "../../components/BookCard/BookCard";
 import api from "../../api";  
-
+import axios from "axios";
 const getStockStatus = (title = "") => {
   const t = title.toLowerCase();
   if (t.includes("out")) return "Stock Out";
@@ -48,21 +48,51 @@ export default function AllGenres() {
   const [allBooks, setAllBooks] = useState([]);
   const [loading, setLoading] = useState(true);
 
+// useEffect(() => {
+//   const fetchBooks = async () => {
+//     try {
+//       const res = await api.get("/books"); // <-- Your FastAPI endpoint
+//       setAllBooks(res.data); // set data from API
+//     } catch (err) {
+//       console.error("Failed to fetch books:", err);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   fetchBooks();
+// }, []);
+
 useEffect(() => {
   const fetchBooks = async () => {
     try {
-      const res = await api.get("/books"); // <-- Your FastAPI endpoint
-      console.log("Books fetched:", res.data);
-      setAllBooks(res.data); // set data from API
+      const [booksRes, categoriesRes] = await Promise.all([
+        axios.get("http://localhost:8000/books"),
+        axios.get("http://localhost:8000/categories")
+      ]);
+
+      const categories = categoriesRes.data;
+      const data = booksRes.data;
+
+      const normalized = data.map((b) => {
+        const category = categories.find(c => c.id === b.category_id)?.name || "Unknown";
+        return {
+          ...b,
+          category,
+          coverImage: b.image ? `http://localhost:8000/media/${b.image}` : "https://via.placeholder.com/150",
+        };
+      });
+
+      setAllBooks(normalized);
     } catch (err) {
       console.error("Failed to fetch books:", err);
-    } finally {
-      setLoading(false);
+      setAllBooks([]);
     }
   };
 
   fetchBooks();
 }, []);
+
 
 
 
@@ -84,6 +114,7 @@ useEffect(() => {
 
   const filtered = useMemo(() => {
     if (!filter) return allBooks;
+    console.log("Filtering books with", filter);
     if (filter.type === "all") return allBooks;
     if (filter.type === "category") {
       return allBooks.filter(

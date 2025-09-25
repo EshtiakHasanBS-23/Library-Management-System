@@ -30,32 +30,62 @@ export default function Home() {
   );*/
 
 
-    useEffect(() => {
-    const fetchBooks = async () => {
-      try {
-        const res = await axios.get("http://localhost:8000/books",);
-        const data = res.data || [];
-        // Fix images by prepending media path
-        const normalized = data.map((b) => ({
+  //   useEffect(() => {
+  //   const fetchBooks = async () => {
+  //     try {
+  //       const res = await axios.get("http://localhost:8000/books",);
+  //       const data = res.data || [];
+  //       // Fix images by prepending media path
+  //       const normalized = data.map((b) => ({
+  //         ...b,
+  //         coverImage: b.image
+  //           ? `http://localhost:8000/media/${b.image}`
+  //           : "https://via.placeholder.com/150",
+  //       }));
+  //       setAllBooks(normalized);
+  //     } catch (err) {
+  //       console.error("Failed to fetch books:", err);
+  //       // fallback to placeholder data
+  //       setAllBooks(
+  //         booksPlaceholder.recommended.map((b) => ({
+  //           ...b,
+  //           coverImage: b.image || "https://via.placeholder.com/150",
+  //         }))
+  //       );
+  //     }
+  //   };
+  //   fetchBooks();
+  // }, []);
+
+  useEffect(() => {
+  const fetchBooks = async () => {
+    try {
+      const [booksRes, categoriesRes] = await Promise.all([
+        axios.get("http://localhost:8000/books"),
+        axios.get("http://localhost:8000/categories")
+      ]);
+
+      const categories = categoriesRes.data;
+      const data = booksRes.data;
+
+      const normalized = data.map((b) => {
+        const category = categories.find(c => c.id === b.category_id)?.name || "Unknown";
+        return {
           ...b,
-          coverImage: b.image
-            ? `http://localhost:8000/media/${b.image}`
-            : "https://via.placeholder.com/150",
-        }));
-        setAllBooks(normalized);
-      } catch (err) {
-        console.error("Failed to fetch books:", err);
-        // fallback to placeholder data
-        setAllBooks(
-          booksPlaceholder.recommended.map((b) => ({
-            ...b,
-            coverImage: b.image || "https://via.placeholder.com/150",
-          }))
-        );
-      }
-    };
-    fetchBooks();
-  }, []);
+          category, // add category name
+          coverImage: b.image ? `http://localhost:8000/media/${b.image}` : "https://via.placeholder.com/150",
+        };
+      });
+
+      setAllBooks(normalized);
+    } catch (err) {
+      console.error("Failed to fetch books:", err);
+      setAllBooks([]);
+    }
+  };
+
+  fetchBooks();
+}, []);
 
 
   const filtered = useMemo(() => {
@@ -361,7 +391,7 @@ export default function Home() {
                         key={b.id}
                         book={{
                           ...b,
-                          coverImage: b.coverImage || b.image,
+                          coverImage: b.coverImage || b.image ? `http://localhost:8000${b.image}`  : "https://via.placeholder.com/150",
                         }}
                         variant="grid"
                         size="scroller"

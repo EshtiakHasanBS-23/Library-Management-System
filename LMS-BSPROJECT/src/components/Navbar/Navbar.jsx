@@ -15,7 +15,7 @@ import { CgMenuGridR } from "react-icons/cg";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import AppLauncherMenu from "./AppLauncherMenu"; 
-
+import axios from "axios";
 export default function Navbar() {
   const navigate = useNavigate();
 
@@ -31,15 +31,31 @@ export default function Navbar() {
 
   const searchRef = useRef(null);
   const gridRef = useRef(null); // anchor for the grid icon/menu
+  
 
+  
   // Auth state (simple)
-  const [user, setUser] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("authUser")) || null;
-    } catch {
-      return null;
-    }
-  });
+  // const [user, setUser] = useState(() => {
+  //   try {
+  //     return JSON.parse(localStorage.getItem("authUser")) || null;
+  //   } catch {
+  //     return null;
+  //   }
+  // });
+  const [user, setUser] = useState(null);
+
+useEffect(() => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    // fetch user info from backend
+    axios
+      .get("http://localhost:8000/users/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setUser(res.data))
+      .catch(() => setUser(null));
+  }
+}, []);
 
   // Load books for search
   useEffect(() => {
@@ -285,7 +301,7 @@ export default function Navbar() {
                     {user ? "Signed in as" : "Welcome"}
                   </div>
                   <div className="font-semibold text-gray-800">
-                    {user?.name || "Guest"}
+                    {user?.username || "Guest"}
                   </div>
                 </div>
                 <ul className="py-1 text-sm">
@@ -315,13 +331,20 @@ export default function Navbar() {
                 <div className="border-t">
                   <button
                     className="w-full px-4 py-2 text-left text-sky-600 font-semibold hover:bg-gray-50"
-                    // onClick={'toggleSignIn'}
-                     onClick={() => {
+                    onClick={() => {
+                      if (user) {
+                        // logout
+                        localStorage.removeItem("token");
+                        setUser(null);
+                        navigate("/");
+                      } else {
+                        // go to login
                         setOpenUser(false);
                         navigate("/login");
-                      }}
+                      }
+                    }}
                   >
-                    {user ? "Sign Out" : "Sign In"}
+                    {user ? "Sign Out" : "Sign In"}   {/* ✅ toggle label */}
                   </button>
                 </div>
               </div>

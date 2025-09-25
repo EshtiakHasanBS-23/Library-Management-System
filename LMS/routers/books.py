@@ -8,7 +8,11 @@ import os, shutil
 from pathlib import Path
 from uuid import uuid4
 from typing import Optional, Union
+
+
 router = APIRouter(prefix="", tags=["Books"])
+
+
 @router.get("/search")
 def search_books(
     q: str,
@@ -43,6 +47,8 @@ def get_book(book_id: int, db: Session = Depends(get_db),current_user = Depends(
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
     return book
+
+
 @router.get("/all/{category_id}", response_model=list[schemas.Book])
 def get_book_by_category(category_id: int, db: Session = Depends(get_db),current_user = Depends(get_current_user)):
     book = db.query(models.Book).filter(models.Book.category_id == category_id).first()
@@ -53,20 +59,7 @@ def get_book_by_category(category_id: int, db: Session = Depends(get_db),current
 
 MEDIA_DIR = "media/uploads"
 os.makedirs(MEDIA_DIR, exist_ok=True)
-# @router.post("/", response_model=schemas.Book)
-# def create_book(book: schemas.BookCreate, file: UploadFile = File(...),db: Session = Depends(get_db),current_user = Depends(admin_required)):
-#     new_book = models.Book(**book.dict())
-#     suffix = Path(file.filename).suffix
-#     filename = f"{uuid4().hex}{suffix}"
-#     file_path = os.path.join(MEDIA_DIR, filename)
-    
-#     with open(file_path, "wb") as buffer:
-#         shutil.copyfileobj(file.file, buffer)
-#     new_book.image = f"/{file_path}"
-#     db.add(new_book)
-#     db.commit()
-#     db.refresh(new_book)
-#     return new_book
+
 @router.post("/", response_model=schemas.Book)
 def create_book(
     title: str = Form(...),
@@ -151,7 +144,7 @@ def update_book(
 
 
 @router.delete("/{book_id}")
-def delete_book(book_id: int, db: Session = Depends(get_db),current_user = Depends(admin_required)):
+def delete_book(book_id: int, db: Session = Depends(get_db), current_user = Depends(admin_required)):
     book = db.query(models.Book).filter(models.Book.id == book_id).first()
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")

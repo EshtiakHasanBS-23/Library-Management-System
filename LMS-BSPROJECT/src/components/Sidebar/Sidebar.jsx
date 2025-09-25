@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { ChevronDown, Star } from "lucide-react"; // use ChevronDown (rotates), keep Star for commented Ratings
 import { Link, useNavigate } from "react-router-dom";
-
+import axios from "axios";
 const categories = [
   {
     name: "Development",
@@ -98,6 +98,26 @@ export default function Sidebar({ onSelect }) {
   const [selectedRating, setSelectedRating] = useState(null);
   const [selectedDuration, setSelectedDuration] = useState(null);
   const [allBooks, setAllBooks] = useState([]);
+  
+  
+  const [categories, setCategories] = useState([]);
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    if (!token) {
+      navigate("/login");
+    }
+
+    axios.get("http://localhost:8000/categories", {
+      headers: { Authorization: `Bearer ${token}` } // send token
+    })
+      .then((res) => setCategories(res.data || []))
+      .catch((err) => {
+        console.error("Failed to fetch categories:", err);
+        setCategories([]);
+      });
+  }, [token, navigate]);
+
 
   // === Popup (toast) state — now includes `to` (link target)
   const [toast, setToast] = useState({ open: false, text: "", to: "" });
@@ -347,7 +367,26 @@ export default function Sidebar({ onSelect }) {
                       <input
                         type="checkbox"
                         checked={catChecked}
-                        onChange={() => toggleCategoryCheckbox(cat.name)}
+                        // onChange={() => toggleCategoryCheckbox(cat.name)}
+                         onChange={() => {
+                          if (activeCategory === cat.name) {
+                            setActiveCategory(null);
+                            if (onSelect) {
+                              onSelect(null); // clear filter
+                            } else {
+                              navigate("/all-genres", { state: { filter: null } });
+                            }
+                          } else {
+                            setActiveCategory(cat.name);
+                            if (onSelect) {
+                              onSelect({ type: "category", value: cat.name });
+                            } else {
+                              navigate("/all-genres", {
+                                state: { filter: { type: "category", value: cat.name } },
+                              });
+                            }
+                          }
+                        }}
                         className="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500"
                       />
                       <span className={`text-sm ${catChecked ? "text-sky-700 font-medium" : "text-gray-700"}`}>

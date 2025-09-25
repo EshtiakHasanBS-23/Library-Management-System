@@ -66,7 +66,7 @@
 #     categories_db.append(category)
 #     return category
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from LMS import models, schemas
 from LMS.database import get_db
@@ -77,8 +77,9 @@ router = APIRouter(prefix="", tags=["Categories"])
 
 # List categories
 @router.get("/", response_model=list[schemas.CategoryOut])
-def list_categories(db: Session = Depends(get_db),current_user = Depends(get_current_user)):
+def list_categories(db: Session = Depends(get_db)):
     return db.query(models.Category).all()
+
 
 @router.get("/{category_id}", response_model=str)
 def categories_name_by_id(category_id:int,  db: Session = Depends(get_db),current_user = Depends(get_current_user)):
@@ -95,6 +96,7 @@ def create_category(category: schemas.CategoryCreate, db: Session = Depends(get_
     db.commit()
     db.refresh(new_category)
     return new_category
+
 @router.put("/{category_id}", response_model=schemas.CategoryOut)
 def update_category(category_id: int,
                     category_in: schemas.CategoryCreate,

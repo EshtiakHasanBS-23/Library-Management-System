@@ -139,7 +139,7 @@ export default function UserDashboard() {
           ...loan,
           displayStatus: mapStatus(loan),
         }));
-        console.log("Fetched loans from API:", response.data);
+      
 
         setMyLoans(loansWithMappedStatus);
 

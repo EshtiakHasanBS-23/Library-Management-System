@@ -157,6 +157,32 @@ export default function Dashboard() {
 
   
 
+   const [rows, setRows] = useState([]);
+
+  useEffect(() => {
+    const fetchBorrows = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get("http://localhost:8000/borrows", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const today = new Date();
+        const overdue = (res.data || []).filter((r) => {
+          if (!r.return_date) return false;
+          const due = new Date(r.return_date);
+          return !r.returned_at && due < today;
+        });
+
+        setRows(overdue);
+      } catch (err) {
+        console.error("Failed to fetch overdue history:", err);
+      }
+    };
+
+    fetchBorrows();
+  }, []);
+
   // Smooth path helpers (quadratic mid-point)
   const chartBox = { w: 720, h: 200, padX: 36, padY: 20 };
   const allVals = series.flatMap((s) => s.values);
@@ -416,26 +442,38 @@ export default function Dashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left border-b border-gray-200">
-                  <th>#</th>
-                  <th>Book name</th>
-                  <th>User name</th>
+                  <th className="w-10">#</th>
+                  <th className="w-18">Book name</th>
+                  <th className="w-10">User name</th>
                   <th className="text-center">Email</th>
-                  <th>Returned Date</th>
+                  <th className="w-10">Returned Date</th>
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b border-gray-200">
-                  <td>1</td>
-                  <td className="font-semibold">Core Java</td>
-                  <td>Sadia Prova</td>
-                  <td className="text-center">
-                    <span className="inline-flex items-center justify-center gap-1 text-gray-700">
-                      <Mail size={16} className="text-gray-500" />
-                      <span>sadia@company.com</span>
-                    </span>
-                  </td>
-                  <td>03/08/2025</td>
-                </tr>
+                {rows.length > 0 ? (
+            rows.map((r, idx) => (
+              <tr key={r.id} className="border-b border-gray-200">
+                <td>{idx + 1}</td>
+                <td className="font-semibold">{r.book_title?r.book_title : "—"}</td>
+                <td>{r.username?r.username : "—"}</td>
+                <td className="text-center">
+                  <span className="inline-flex items-center justify-center gap-1 text-gray-700">
+                    <Mail size={16} className="text-gray-500" />
+                    <span>{r.email? r.email : "—"}</span>
+                  </span>
+                </td>
+                <td className="text-red-600 font-medium">
+                  {r.return_date ? r.return_date.split("T")[0] : "—"}
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={5} className="text-center text-gray-500 py-4">
+                 No overdue records found
+              </td>
+            </tr>
+          )}
               </tbody>
             </table>
           </div>
