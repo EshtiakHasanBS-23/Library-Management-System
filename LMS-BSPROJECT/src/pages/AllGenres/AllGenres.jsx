@@ -6,8 +6,11 @@ import Sidebar from "../../components/Sidebar/Sidebar";
 import BookCard from "../../components/BookCard/BookCard";
 import api from "../../api";  
 import axios from "axios";
-const getStockStatus = (title = "") => {
-  const t = title.toLowerCase();
+const getStockStatus = (b) => {
+
+  const raw = b.copies;
+  if (typeof raw === "number" && raw < 1) return "Stock Out";
+  const t = b.title.toLowerCase();
   if (t.includes("out")) return "Stock Out";
   if (t.includes("upcoming")) return "Upcoming";
   return "Available";
@@ -175,11 +178,11 @@ useEffect(() => {
                         ...b,
                         // coverImage: b.coverImage || b.image, // map to shared card field
                         coverImage: b.image ? `http://localhost:8000${b.image}` : "",
-                        status: b.status || getStockStatus(b.title),
+                        status: b.status || getStockStatus(b),
                       }}
                       variant="grid"
                       size="scroller"
-                      status={b.status || getStockStatus(b.title)}
+                      status={b.status || getStockStatus(b)}
                       onClick={() => goTo(b.id)}
                       onReadThisBook={() => goTo(b.id)}
                     />

@@ -132,8 +132,8 @@ export default function Home() {
 
   // status helper
   const getStatus = (b) => {
-    const raw = (b.status || b.stock || "").toString().trim().toLowerCase();
-
+    const raw = b.copies;
+    if (typeof raw === "number" && raw < 1) return "Stock Out";
     if (raw === "available") return "Available";
     if (raw === "stock out" || raw === "out of stock" || raw === "out")
       return "Stock Out";

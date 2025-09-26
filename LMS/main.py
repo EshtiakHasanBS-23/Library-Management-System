@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
-from LMS.routers import auth, users, books, borrows, categories, reviews
+from LMS.routers import auth, users, books, borrows, categories, reviews, donation_books
 
 app = FastAPI()
 app.add_middleware(
@@ -25,6 +25,7 @@ app.include_router(books.router, prefix="/books", tags=["Books"])
 app.include_router(borrows.router, prefix="/borrows", tags=["Borrows"])
 app.include_router(categories.router, prefix="/categories", tags=["Categories"])
 app.include_router(reviews.router, prefix="/reviews", tags=["Reviews"])
+app.include_router(donation_books.router, prefix="/donation_books", tags=["Donation Books"])
 
 
 # Custom OpenAPI schema for Swagger Authorize button

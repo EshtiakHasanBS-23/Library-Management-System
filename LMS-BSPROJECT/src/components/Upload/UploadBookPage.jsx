@@ -17,19 +17,16 @@ import {
   HandHeart,
 } from "lucide-react";
 import UserSidebar from "../UserSidebar/UserSidebar";
-
+import axios from "axios";
 export default function UploadBookPage() {
   const initialBookData = {
     title: "",
     author: "",
-    // input-based category
-    mainCategory: "",
-    quantity: "",
+    category: "",
+    copies: 1,
     description: "",
-    // Added
-    bsEmail: "",
-    bsIdNo: "",
-    bookIdNo: "",
+    email: "", 
+    BS_ID: "", 
   };
 
   const [bookData, setBookData] = useState(initialBookData);
@@ -107,42 +104,77 @@ export default function UploadBookPage() {
     setLoadingAudio(false);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const payload = {
-      ...bookData,
-      hasCoverImage: !!files.cover,
-      hasPDF: !!files.pdf,
-      hasAudio: !!files.audio,
-    };
-    console.log("Book submitted:", payload, files);
+  // const handleSubmit = (e) => {
+  //   e.preventDefault();
+  //   const payload = {
+  //     ...bookData,
+  //     hasCoverImage: !!files.cover,
+  //     hasPDF: !!files.pdf,
+  //     hasAudio: !!files.audio,
+  //   };
+  //   console.log("Book submitted:", payload, files);
 
-    // Optional: save a simple history entry (so “fill up history” can refresh elsewhere if you read it)
-    try {
-      const history = JSON.parse(localStorage.getItem("donationHistory") || "[]");
-      history.push({
-        ...payload,
-        createdAt: new Date().toISOString(),
-        files: {
-          cover: files.cover?.name || null,
-          pdf: files.pdf?.name || null,
-          audio: files.audio?.name || null,
-        },
-      });
-      localStorage.setItem("donationHistory", JSON.stringify(history));
-    } catch {}
+  //   // Optional: save a simple history entry (so “fill up history” can refresh elsewhere if you read it)
+  //   try {
+  //     const history = JSON.parse(localStorage.getItem("donationHistory") || "[]");
+  //     history.push({
+  //       ...payload,
+  //       createdAt: new Date().toISOString(),
+  //       files: {
+  //         cover: files.cover?.name || null,
+  //         pdf: files.pdf?.name || null,
+  //         audio: files.audio?.name || null,
+  //       },
+  //     });
+  //     localStorage.setItem("donationHistory", JSON.stringify(history));
+  //   } catch {}
 
-    // Show popup
+  //   // Show popup
+  //   setShowSuccess(true);
+
+  //   // Auto close + auto reset after a few seconds so the form is ready to fill again
+  //   setTimeout(() => {
+  //     setShowSuccess(false);
+  //     resetForm();
+  //     // If you prefer a hard refresh instead, uncomment:
+  //     // window.location.reload();
+  //   }, 2500);
+  // };
+
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  const formData = new FormData();
+  formData.append("title", bookData.title);
+  formData.append("author", bookData.author);
+  formData.append("description", bookData.description);
+  formData.append("category", bookData.category);
+  formData.append("copies", bookData.copies);
+  formData.append("email", bookData.email);
+  formData.append("BS_ID", bookData.BS_ID);
+  if (files.cover) formData.append("file", files.cover);
+
+  try {
+    const token = localStorage.getItem("token");
+    const res = await axios.post("http://localhost:8000/donation_books/", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    console.log("Donation success:", res.data);
     setShowSuccess(true);
-
-    // Auto close + auto reset after a few seconds so the form is ready to fill again
     setTimeout(() => {
       setShowSuccess(false);
       resetForm();
-      // If you prefer a hard refresh instead, uncomment:
-      // window.location.reload();
     }, 2500);
-  };
+  } catch (err) {
+    console.error("Donation failed:", err);
+    alert("Failed to upload donation. Please try again.");
+  }
+};
+
 
   // ------ Stepper derived states (your rules) ------
   // Step 1 completes when BS ID No is filled

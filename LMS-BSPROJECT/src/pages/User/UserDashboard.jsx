@@ -269,12 +269,12 @@ const returnLoan = async (loan) => {
 
         {/* My Loans */}
         <div className="bg-white rounded shadow p-4">
-          <div className="flex justify-between items-center mb-2">
+          {/* <div className="flex justify-between items-center mb-2">
             <h3 className="font-semibold">My current loans</h3>
             <Link to="/loans" className="text-xs text-green-600 hover:underline">
               View All
             </Link>
-          </div>
+          </div> */}
 
           {/* Responsive container for table */}
           <div className="w-full overflow-x-auto">
@@ -301,13 +301,13 @@ const returnLoan = async (loan) => {
                     </td>
                     <td className="py-2 px-3 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <button
+                        {/* <button
                           type="button"
                           onClick={() => openModal("expected", l)}
                           className="inline-flex items-center gap-1 rounded-md bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-400"
                         >
                           Expected
-                        </button>
+                        </button> */}
                         <button
                           type="button"
                           onClick={() => returnLoan(l)}
