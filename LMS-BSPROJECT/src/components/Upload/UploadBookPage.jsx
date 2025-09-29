@@ -21,12 +21,12 @@ import axios from "axios";
 export default function UploadBookPage() {
   const initialBookData = {
     title: "",
+    mainCategory: "",
+    quantity: 1,
     author: "",
-    category: "",
-    copies: 1,
+    bsEmail: "", 
+    bsIdNo: "", 
     description: "",
-    email: "", 
-    BS_ID: "", 
   };
 
   const [bookData, setBookData] = useState(initialBookData);
@@ -144,14 +144,20 @@ export default function UploadBookPage() {
   const handleSubmit = async (e) => {
   e.preventDefault();
 
+    const fieldMapping = {
+      mainCategory: "category",
+      quantity: "copies",
+      bsEmail: "email",
+      bsIdNo: "BS_ID",
+    };
+
   const formData = new FormData();
-  formData.append("title", bookData.title);
-  formData.append("author", bookData.author);
-  formData.append("description", bookData.description);
-  formData.append("category", bookData.category);
-  formData.append("copies", bookData.copies);
-  formData.append("email", bookData.email);
-  formData.append("BS_ID", bookData.BS_ID);
+  for (const [key, value] of Object.entries(bookData)) {
+      if (value !== undefined && value !== null) {
+        const mappedKey = fieldMapping[key] || key;
+        formData.append(mappedKey, value);
+      }
+    }
   if (files.cover) formData.append("file", files.cover);
 
   try {
@@ -404,7 +410,7 @@ export default function UploadBookPage() {
                 </div>
 
                 {/* Book ID No */}
-                <div>
+                {/* <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Book ID No
                   </label>
@@ -416,7 +422,7 @@ export default function UploadBookPage() {
                     onChange={handleChange}
                     className="w-full px-3 py-2 border rounded-md bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sky-500"
                   />
-                </div>
+                </div> */}
 
                 <div>
                   <div className="flex items-center justify-between mb-1">

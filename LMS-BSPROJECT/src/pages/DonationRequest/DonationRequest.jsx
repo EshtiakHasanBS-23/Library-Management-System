@@ -122,9 +122,47 @@ export default function DonationRequest() {
   // ---------- Data ----------
   const [items, setItems] = useState([]);     // requests (pending/accepted/rejected)
   const [history, setHistory] = useState([]); // actions log
+   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        // 🔹 If you store token after login
+        const token = localStorage.getItem("token");
+
+        const [resItems, resHistory] = await Promise.all([
+          axios.get("http://localhost:8000/donation_books", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get("http://localhost:8000/donation_books/history", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+
+        setItems(resItems.data || []);
+        setHistory(resHistory.data || []);
+      } catch (err) {
+        if (err.response?.status === 401) {
+          setError("You must log in to view donation requests.");
+        } else {
+          setError("Failed to load donation requests.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+
 
   // Load from LS (or seed)
-  useEffect(() => {
+ /* useEffect(() => {
     try {
       const raw = localStorage.getItem(LS_KEY);
       if (raw) {
@@ -156,7 +194,7 @@ export default function DonationRequest() {
       setItems(seeded);
       setHistory([]);
     }
-  }, []);
+  }, []);*/
 
   // Keep multiple tabs in sync
   useEffect(() => {
@@ -219,7 +257,7 @@ export default function DonationRequest() {
     if (bsTrim) {
       if (!/^BS\d{4}$/i.test(bsTrim)) return [];
       const target = bsTrim.toUpperCase();
-      const sub = items.filter((it) => (it.userId || "").toUpperCase() === target);
+      const sub = items.filter((it) => (it.BS_ID || "").toUpperCase() === target);
       return statusFilter === "all" ? sub : sub.filter((it) => it.status === statusFilter);
     }
 
@@ -228,9 +266,9 @@ export default function DonationRequest() {
     return items.filter((it) => {
       const matchQ =
         !q ||
-        it.donorName.toLowerCase().includes(q) ||
+        it.username.toLowerCase().includes(q) ||
         (it.author || "").toLowerCase().includes(q) ||
-        it.bookTitle.toLowerCase().includes(q) ||
+        it.title.toLowerCase().includes(q) ||
         (it.note || "").toLowerCase().includes(q) ||
         it.email.toLowerCase().includes(q);
       const matchS = statusFilter === "all" ? true : it.status === statusFilter;
@@ -248,7 +286,7 @@ export default function DonationRequest() {
   const totalRejected = items.filter((x) => x.status === "rejected").length;
 
   // ---------- Actions ----------
-  const actOn = (id, action) => {
+  /*const actOn = (id, action) => {
     if (action !== "accepted" && action !== "rejected") return;
     const src = items.find((x) => x.id === id);
 
@@ -260,18 +298,61 @@ export default function DonationRequest() {
           action,
           at: new Date().toISOString(),
           amount: src.amount,
-          donorName: src.donorName,
-          bookTitle: src.bookTitle,
+          donorName: src.username,
+          bookTitle: src.title,
         }
       : null;
     const nextHistory = entry ? [entry, ...history] : history;
 
     persist(nextItems, nextHistory);
 
-    showToast(action, `${action === "accepted" ? "Accepted" : "Rejected"}: ${src?.donorName || "Request"}`);
+    showToast(action, `${action === "accepted" ? "Accepted" : "Rejected"}: ${src?.username || "Request"}`);
     setPage(2);
     setHistoryTablePage(1);
-  };
+  };*/
+
+  const actOn = async (id, action) => {
+  if (action !== "accepted" && action !== "rejected") return;
+
+  try {
+    // 🔹 Get token for authentication
+    const token = localStorage.getItem("token");
+
+    // 🔹 Call backend PATCH API
+    const res = await axios.patch(
+      `http://localhost:8000/donation_books/${id}/status`,
+      { status: action },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    const updatedDonation = res.data;
+    const nextItems = items.map((it) =>
+      it.id === id ? { ...it, status: updatedDonation.status } : it
+    );
+
+    const entry = {
+      id: `${id}-${Date.now()}`,
+      requestId: id,
+      action: updatedDonation.status,
+      at: new Date().toISOString(),
+      amount: updatedDonation.amount,
+      donorName: updatedDonation.username || updatedDonation.user_name,
+      bookTitle: updatedDonation.title,
+    };
+    const nextHistory = [entry, ...history];
+
+    persist(nextItems, nextHistory);
+
+    showToast(action, `${action === "accepted" ? "Accepted" : "Rejected"}: ${updatedDonation.username || "Request"}`);
+
+    setPage(2);
+    setHistoryTablePage(1);
+
+  } catch (err) {
+    console.error("Failed to update donation status:", err);
+    showToast("error", "Failed to update status. Try again.");
+  }
+};
 
   // ---------- Small UI components ----------
   const StatCard = ({ icon, label, value, tone = "sky" }) => (
@@ -321,11 +402,11 @@ export default function DonationRequest() {
                   {idx + 1 + (pageForCalc - 1) * PAGE_SIZE}
                 </td>
                 <td className="px-4 py-2">
-                  <div className="font-medium">{r.donorName}</div>
-                  {r.userId && <div className="text-[11px] text-gray-500 mt-0.5">BSID: {r.userId}</div>}
+                  <div className="font-medium">{r.username}</div>
+                  {r.BS_ID && <div className="text-[11px] text-gray-500 mt-0.5">BSID: {r.BS_ID}</div>}
                 </td>
                 <td className="px-4 py-2">
-                  <div className="font-medium">{r.bookTitle}</div>
+                  <div className="font-medium">{r.title}</div>
                   <div className="text-xs text-gray-500">
                     Author: {r.author || "Unknown Author"}
                   </div>
@@ -403,19 +484,19 @@ export default function DonationRequest() {
                 <td className="px-4 py-2 font-medium">
                   {idx + 1 + (pageForCalc - 1) * PAGE_SIZE}
                 </td>
-                <td className="px-4 py-2">{h.donorName}</td>
-                <td className="px-4 py-2">{h.bookTitle}</td>
+                <td className="px-4 py-2">{h.username}</td>
+                <td className="px-4 py-2">{h.title}</td>
                 <td className="px-4 py-2">
                   <span
                     className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold border
                       ${
-                        h.action === "accepted"
+                        h.status === "accepted"
                           ? "bg-green-50 text-green-700 border-green-200"
                           : "bg-rose-50 text-rose-700 border-rose-200"
                       }`}
                   >
-                    {h.action === "accepted" ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
-                    {h.action === "accepted" ? "Collected" : "Rejected"}
+                    {h.status === "accepted" ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+                    {h.status === "accepted" ? "Collected" : "Rejected"}
                   </span>
                 </td>
               </tr>
@@ -581,7 +662,9 @@ export default function DonationRequest() {
               </p>
             </div>
             <div className="p-4">
-              <HistoryTable rows={historySlice} pageForCalc={historyTablePage} />
+              <HistoryTable rows={historySlice} pageForCalc={historyTablePage}
+              
+              />
               <Pagination
                 page={historyTablePage}
                 setPage={setHistoryTablePage}

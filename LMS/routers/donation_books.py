@@ -56,6 +56,9 @@ def create_donation_book(
 def list_donation_books(db: Session = Depends(get_db), current_user: models.User = Depends(admin_required)):
     return db.query(models.DonationBook).all()
 
+@router.get("/history", response_model=list[schemas.DonationBookResponse])
+def list_donation_books(db: Session = Depends(get_db), current_user: models.User = Depends(admin_required)):
+    return db.query(models.DonationBook).filter(models.DonationBook.status!="pending").all()
 
 @router.patch("/{donation_id}/status", response_model=schemas.DonationBookResponse)
 def update_donation_status(donation_id: int, update: schemas.DonationBookUpdateStatus, db: Session = Depends(get_db),current_user: models.User = Depends(admin_required)):
