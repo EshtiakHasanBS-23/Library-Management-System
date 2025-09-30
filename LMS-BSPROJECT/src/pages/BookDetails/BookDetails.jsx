@@ -141,7 +141,7 @@ export default function BookDetails() {
           ratingCount: b.ratingCount ?? 0,
           publisher: b.publisher ?? "—",
           publishDate: b.publishDate ?? "",
-          category: b.category ?? "General",
+          category: b.category_id ?? "General",
           pdfLink: b.pdfLink ?? "#",
           status: b.status,
           image: b.image,
@@ -156,6 +156,7 @@ export default function BookDetails() {
           authorFollowers: Number(b.authorFollowers || b.followers || 16),
           authorBio: b.authorBio || b.author_bio || b.authorStory || "",
           audioSrc: pickAudio(b),
+          copies:b.copies,
         };
 
   const bucket = (s) => {
@@ -810,7 +811,7 @@ useEffect(() => {
                     </div>
                     <div className="flex justify-between sm:block">
                       <span className="text-gray-500">Status</span>
-                      <div className="font-medium text-gray-800">{bookData.status || "Available"}</div>
+                      <div className="font-medium text-gray-800">{bookData.copies < 1 ? "Stock Out" : "Available"}</div>
                     </div>
                   </div>
                 )}

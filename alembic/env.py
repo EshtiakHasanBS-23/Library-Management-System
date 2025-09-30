@@ -1,8 +1,18 @@
 import sys
 import os
 from logging.config import fileConfig
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import engine_from_config, pool,create_engine
 from alembic import context
+
+import os
+from dotenv import load_dotenv
+
+# Load .env from LMS folder
+load_dotenv(os.path.join(os.path.dirname(__file__), "../LMS/.env"))
+
+# Then get DATABASE_URL
+DATABASE_URL = os.getenv("DATABASE_URL")
+
 
 # Add project root to sys.path so LMS package is found
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -63,11 +73,7 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    connectable = create_engine(DATABASE_URL)
 
     with connectable.connect() as connection:
         context.configure(
