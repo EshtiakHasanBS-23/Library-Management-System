@@ -171,7 +171,7 @@ export default function UserHistory() {
                   </div>
                   <div className="rounded border border-gray-200 p-2">
                     <p className="text-[11px] text-gray-500">Due Date</p>
-                    <p className="text-sm text-gray-800">{r.return_date.split("T")[0] || "—"}</p>
+                    <p className="text-sm text-gray-800">{r.return_date ? r.return_date.split("T")[0] : "—"}</p>
                   </div>
                   <div className="rounded border border-gray-200 p-2 col-span-2">
                     <p className="text-[11px] text-gray-500">Returned On</p>
@@ -220,7 +220,7 @@ export default function UserHistory() {
                       <td className="py-3 px-4 font-medium text-gray-800">{r.book_title}</td>
                       <td className="py-3 px-4 text-gray-700">{r.username}</td>
                       <td className="py-3 px-4 text-gray-700">{r.borrow_date.split('T')[0] || "—"}</td>
-                      <td className="py-3 px-4 text-gray-700">{r.return_date.split('T')[0] || "—"}</td>
+                      <td className="py-3 px-4 text-gray-700">{r.return_date ? r.return_date.split('T')[0] : "—"}</td>
                       <td className="py-3 px-4 text-gray-700">{r.returned_at ? r.returned_at.split("T")[0] : "—"}</td>
                       <td className="py-3 px-4"><span className={badge(r.status)}>{mapStatusLabel(r.status, r.return_date)}</span></td>
                       <td className="py-3 px-4 text-center">
@@ -274,7 +274,7 @@ export default function UserHistory() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
                   <div className="rounded border border-gray-200 p-3"><p className="text-xs text-gray-500 mb-1">Borrowed On</p><p className="font-medium text-gray-800">{detail.borrow_date.split("T")[0] || "—"}</p></div>
-                  <div className="rounded border border-gray-200 p-3"><p className="text-xs text-gray-500 mb-1">Due Date</p><p className="font-medium text-gray-800">{detail.return_date.split("T")[0] || "—"}</p></div>
+                  <div className="rounded border border-gray-200 p-3"><p className="text-xs text-gray-500 mb-1">Due Date</p><p className="font-medium text-gray-800">{detail.return_date ? detail.return_date.split("T")[0] : "—"}</p></div>
                   <div className="rounded border border-gray-200 p-3"><p className="text-xs text-gray-500 mb-1">Returned On</p><p className="font-medium text-gray-800">{detail.returned_at ? detail.returned_at.split("T")[0] : "—"}</p></div>
                 </div>
 

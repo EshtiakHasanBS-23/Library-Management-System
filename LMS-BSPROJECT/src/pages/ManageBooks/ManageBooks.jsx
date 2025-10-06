@@ -65,13 +65,12 @@ async function loadCategories() {
   }
 }
 
-
 function normalizeFromJson(item) {
   return {
     id: String(item.id ?? crypto.randomUUID()),
     title: item.title ?? "—",
     author: item.authors ?? item.author ?? "—",
-    category: item.category_id?? "—",
+    category: item.category?? "—",
     copies: item.copies || "—",
     updatedOn: toYMD(item.publishDate ?? ""),
     cover: item.coverImage || item.image ? `http://localhost:8000${item.image}` : PLACEHOLDER_IMG,
@@ -449,13 +448,13 @@ const handleSave = async () => {
     return;
   }
   setSaving(true);
-
+  
   try {
     const token = localStorage.getItem("token");
     const formData = new FormData();
     formData.append("title", form.title);
     formData.append("author", form.author);
-    formData.append("category_id", form.category);  // backend expects category_id
+    formData.append("category_name", form.category);  // backend expects category_id
     formData.append("copies", form.copies);
     formData.append("description", form.description);
 
@@ -517,11 +516,6 @@ const handleSave = async () => {
     setPendingDeleteId(null);
     setConfirmOpen(false);
   };*/
-
-  const requestDelete = (id) => {
-  setPendingDeleteId(id);
-  setConfirmOpen(true);
-};
 
 const confirmDelete = async () => {
   if (!pendingDeleteId) return;

@@ -46,7 +46,11 @@ class BookCreate(BookBase):
 class Book(BookBase):
     id: int
     copies: int
+    category:Optional[str] = None
+    created_at: datetime
     image: Optional[str] = None
+    pdf: Optional[str] = None
+    audio: Optional[str] = None
     class Config:
         orm_mode = True
 
@@ -61,7 +65,7 @@ class BorrowOut(BaseModel):
     book_id: int
     book_title: str
     borrow_date: datetime
-    return_date: datetime
+    return_date: Optional [datetime]= None
     returned_at: Optional[datetime] = None
     status: str
 
@@ -116,6 +120,8 @@ class DonationBookUpdateStatus(BaseModel):
 class DonationBookResponse(DonationBookBase):
     id: int
     image: Optional[str] = None
+    pdf: Optional[str] = None
+    audio: Optional[str] = None
     status: str
 
     class Config:

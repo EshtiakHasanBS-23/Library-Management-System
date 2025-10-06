@@ -119,7 +119,7 @@ export default function UserDashboard() {
       case "rejected":
         return "Rejected";
       default:
-        return "Unknown";
+        return status;
     }
   };
   useEffect(() => {
@@ -295,7 +295,7 @@ const returnLoan = async (loan) => {
                     <td className="py-2 px-3">{i + 1}</td>
                     <td className="py-2 px-3 font-medium">{l.book_title}</td>
                     <td className="py-2 px-3">{l.username}</td>
-                    <td className="py-2 px-3">{l.return_date.split('T')[0]}</td>
+                    <td className="py-2 px-3">{l.return_date ? l.return_date.split('T')[0] : '-'}</td>
                     <td className="py-2 px-3">
                       <span className={statusBadge(mapStatus(l))}>{mapStatus(l)}</span>
                     </td>

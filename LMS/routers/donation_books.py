@@ -8,8 +8,7 @@ import os, shutil
 from pathlib import Path
 from uuid import uuid4
 from typing import Optional, Union
-
-
+from datetime import datetime
 router = APIRouter()
 MEDIA_DIR = Path("media/donations")
 
@@ -23,17 +22,12 @@ def create_donation_book(
     email: str = Form(...),
     BS_ID: str = Form(...),
     file: UploadFile = File(None),
+    pdf: UploadFile = File(None),
+    audio: UploadFile = File(None),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    # Handle image upload
-    file_path = None
-    if file:
-        suffix = Path(file.filename).suffix
-        filename = f"{uuid4().hex}{suffix}"
-        file_path = os.path.join(MEDIA_DIR, filename)
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+
     
     donation_book = models.DonationBook(
         title=title,
@@ -44,9 +38,24 @@ def create_donation_book(
         username=current_user.username,
         email=email,
         BS_ID=BS_ID,
-        image=f"/{file_path}",
         status="pending"
     )
+
+    def save_file(file: UploadFile, folder: str):
+        suffix = Path(file.filename).suffix
+        filename = f"{uuid4().hex}{suffix}"
+        file_path = os.path.join(folder, filename)
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        return f"/{file_path}"
+
+    # Update files if provided
+    if file:
+        donation_book.image = save_file(file, MEDIA_DIR)
+    if pdf:
+        donation_book.pdf = save_file(pdf, MEDIA_DIR)
+    if audio:
+        donation_book.audio = save_file(audio, MEDIA_DIR)
     db.add(donation_book)
     db.commit()
     db.refresh(donation_book)
@@ -83,7 +92,10 @@ def update_donation_status(donation_id: int, update: schemas.DonationBookUpdateS
             description=donation.description,
             copies=donation.copies,
             image=donation.image,
-            category_id=category_id
+            pdf=donation.pdf,
+            audio=donation.audio,
+            category_id=category_id,
+            created_at=datetime.utcnow()
         )
         db.add(new_book)
         db.commit()

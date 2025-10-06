@@ -156,14 +156,14 @@ def my_borrow_history(
 
 @router.get("/stats")
 def borrow_stats(db: Session = Depends(get_db), current_user: models.User = Depends(admin_required)):
-    total_books = db.query(func.sum(models.Book.copies)).scalar() or 0
+    available_copies = db.query(func.sum(models.Book.copies)).scalar() or 0
 
     borrowed_copies = db.query(func.count(models.Borrow.id)).filter(models.Borrow.status == "approved").scalar() or 0
     returned_copies = db.query(func.count(models.Borrow.id)).filter(models.Borrow.status == "returned").scalar() or 0
     pending_copies = db.query(func.count(models.Borrow.id)).filter(models.Borrow.status == "pending").scalar() or 0
 
 
-    available_copies = total_books - borrowed_copies
+    total_books = available_copies + borrowed_copies
 
     return {
         "total_copies": total_books,
@@ -172,3 +172,33 @@ def borrow_stats(db: Session = Depends(get_db), current_user: models.User = Depe
         "returned_copies": returned_copies,
         "pending_copies": pending_copies,
     }
+
+@router.post("/pdf-view/{book_id}", response_model=schemas.BorrowOut)
+def record_pdf_view(
+    book_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    existing = (
+        db.query(models.Borrow)
+        .filter(
+            models.Borrow.user_id == current_user.id,
+            models.Borrow.book_id == book_id,
+            models.Borrow.status == "Pdf Viewed",
+        )
+        .first()
+    )
+    if existing:
+        return existing 
+
+
+    borrow = models.Borrow(
+        user_id=current_user.id,
+        book_id=book_id,
+        status="Pdf Viewed",
+        borrow_date=datetime.utcnow(),
+    )
+    db.add(borrow)
+    db.commit()
+    db.refresh(borrow)
+    return borrow

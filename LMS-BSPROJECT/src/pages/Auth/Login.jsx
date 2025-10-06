@@ -59,25 +59,6 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  /*const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    try {
-      const res = await axios.post("http://localhost:8000/token", {
-        username,
-        password,
-      });
-
-      // Save JWT token
-      localStorage.setItem("token", res.data.access_token);
-
-      // Redirect to homepage
-      navigate("/");
-    } catch (err) {
-      console.error("Login failed:", err);
-      alert("Invalid username or password");
-    }
-  };*/
   const handleSubmit = async (e) => {
   e.preventDefault();
 

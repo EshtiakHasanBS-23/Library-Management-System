@@ -34,7 +34,10 @@ class Book(Base):
     description = Column(Text, nullable=True)
     copies = Column(Integer, default=1, nullable=False)
     category_id = Column(Integer, ForeignKey("categories.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
     image = Column(String(255), nullable=True)
+    pdf = Column(String(255), nullable=True)
+    audio = Column(String(255), nullable=True)
 
     category = relationship("Category", back_populates="books")
     borrows = relationship("Borrow", back_populates="book", cascade="all, delete-orphan")
@@ -47,7 +50,7 @@ class Borrow(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
     borrow_date = Column(DateTime, default=datetime.utcnow)
-    return_date = Column(DateTime, nullable=False)
+    return_date = Column(DateTime, nullable=True)
     returned_at = Column(DateTime, nullable=True)
     status = Column(String(50), default="pending")
 
@@ -78,5 +81,7 @@ class DonationBook(Base):
     BS_ID = Column(String, nullable=False)
     username = Column(String, nullable=False) 
     image = Column(String, nullable=True)
+    pdf = Column(String, nullable=True)
+    audio = Column(String, nullable=True)
     status = Column(String, default="pending")
-    copies = Column(Integer, default=1)  
+    copies = Column(Integer, default=1)

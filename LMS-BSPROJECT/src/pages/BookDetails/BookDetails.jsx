@@ -126,7 +126,17 @@ export default function BookDetails() {
   };
 
   const pickAudio = (b) =>
-    b?.audio || b?.audioSrc || b?.audioLink || b?.audio_clip || b?.audioURL || null;
+  {
+     const audioPath =
+    b.audio || b.audioSrc || b.audioLink || b.audio_clip || b.audioURL || null;
+
+  if (!audioPath) return null;
+
+  // If the path starts with "/", prepend your backend base URL
+  return audioPath.startsWith("http")
+    ? audioPath
+    : `http://localhost:8000${b.audio}`;
+  }
 
   const normalize = (b) =>
     !b
@@ -139,10 +149,11 @@ export default function BookDetails() {
           : "https://via.placeholder.com/150",
           rating: b.rating ?? 0,
           ratingCount: b.ratingCount ?? 0,
-          publisher: b.publisher ?? "—",
-          publishDate: b.publishDate ?? "",
-          category: b.category_id ?? "General",
-          pdfLink: b.pdfLink ?? "#",
+          publisher: b.author ?? "—",
+          publishDate: b.created_at ?? "",
+          category: b.category ?? "General",
+          pdfLink: b.pdfLink || b.pdf   ? `http://localhost:8000${b.pdf}` // <-- prepend backend media path
+          : "https://via.placeholder.com/150",
           status: b.status,
           image: b.image,
           summary: b.longSummary || b.summary || b.description || "",
@@ -260,7 +271,33 @@ export default function BookDetails() {
   fetchBook();
 }, [id]);*/
 
+const token = localStorage.getItem("token");
 
+const handlePdfClick = async (bookId, pdfLink) => {
+  try {
+    if (!token) {
+      alert("Please login first!");
+      return;
+    }
+
+    await axios.post(
+      `http://localhost:8000/borrows/pdf-view/${bookId}`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    // ✅ Open the PDF in a new tab
+    window.open(pdfLink, "_blank");
+  } catch (err) {
+    console.error("Failed to record PDF view:", err);
+    // still open PDF even if record fails
+    window.open(pdfLink, "_blank");
+  }
+};
 useEffect(() => {
     const fetchBook = async () => {
       try {
@@ -561,7 +598,7 @@ useEffect(() => {
             by <span className="text-sky-600 font-medium">{bookData.authors}</span>
           </p>
           <p className="text-sm text-gray-500 mt-1">
-            {bookData.publisher}, {bookData.publishDate} —{" "}
+            {bookData.publisher}, {bookData.publishDate.split("T")[0]} —{" "}
             <Link
               to="/all-genres"
               state={{ filter: { type: "category", value: bookData.category } }}
@@ -660,13 +697,16 @@ useEffect(() => {
               />
 
               <a
-                href={bookData.pdfLink}
-                download
-                className="ml-auto inline-flex items-center gap-1 text-sm text-gray-700 font-semibold border border-gray-300 px-4 py-2 rounded hover:bg-gray-100"
-              >
-                <Download className="w-4 h-4" />
-                PDF
-              </a>
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handlePdfClick(bookData.id, bookData.pdfLink);
+                  }}
+                  className="ml-auto inline-flex items-center gap-1 text-sm text-gray-700 font-semibold border border-gray-300 px-4 py-2 rounded hover:bg-gray-100"
+                >
+                  <Download className="w-4 h-4" />
+                  PDF
+                </a>
             </div>
 
             {!bookData.audioSrc && (
@@ -801,7 +841,7 @@ useEffect(() => {
                     </div>
                     <div className="flex justify-between sm:block">
                       <span className="text-gray-500">Publish Date</span>
-                      <div className="font-medium text-gray-800">{bookData.publishDate || "—"}</div>
+                      <div className="font-medium text-gray-800">{bookData.publishDate.split("T")[0] || "—"}</div>
                     </div>
                     <div className="flex justify-between sm:block">
                       <span className="text-gray-500">Rating</span>
