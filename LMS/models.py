@@ -85,3 +85,14 @@ class DonationBook(Base):
     audio = Column(String, nullable=True)
     status = Column(String, default="pending")
     copies = Column(Integer, default=1)
+
+
+class SystemSetting(Base):
+    __tablename__ = "system_settings"
+
+    id = Column(Integer, primary_key=True, index=True, default=1)
+    borrow_day_limit = Column(Integer, nullable=False, default=14)
+    borrow_extend_limit = Column(Integer, nullable=False, default=7)
+    borrow_limit = Column(Integer, nullable=False, default=3)
+    booking_duration = Column(Integer, nullable=False, default=2)
+    booking_days_limit = Column(Integer, nullable=False, default=30)

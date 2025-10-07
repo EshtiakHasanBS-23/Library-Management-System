@@ -9,7 +9,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import Sidebar from "../../components/DashboardSidebar/DashboardSidebar";
-
+import axios from "axios";
 const LS_KEY = "adminSettings_limits_v1";
 
 // Pretty row used for each setting
@@ -45,9 +45,37 @@ function SettingRow({ icon, title, help, value, onChange, id }) {
 }
 
 export default function AdminSettings() {
-  useEffect(() => {
-    document.title = "Admin Settings";
-  }, []);
+useEffect(() => {
+  document.title = "Admin Settings";
+
+  const fetchSettings = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("You must log in to view settings");
+      navigate("/login");
+      return;
+    }
+
+    try {
+      const res = await axios.get("http://localhost:8000/settings/", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = res.data;
+      setLimits({
+        "borrow-day-limit": data.borrow_day_limit,
+        "borrow-extend-limit": data.borrow_extend_limit,
+        "borrow-limit": data.borrow_limit,
+        "booking-duration": data.booking_duration,
+        "booking-days-limit": data.booking_days_limit,
+      });
+    } catch (err) {
+      console.error("Failed to load settings", err);
+    }
+  };
+
+  fetchSettings();
+}, []);
 
   // Default values (you can change these if your backend wants other initial numbers)
   const defaults = {
@@ -57,17 +85,17 @@ export default function AdminSettings() {
     "booking-duration": 2,
     "booking-days-limit": 30,
   };
-
+  const [limits, setLimits] = useState({ ...defaults });
   // Load from localStorage
-  const [limits, setLimits] = useState(() => {
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      const saved = raw ? JSON.parse(raw) : {};
-      return { ...defaults, ...saved };
-    } catch {
-      return { ...defaults };
-    }
-  });
+  // const [limits, setLimits] = useState(() => {
+  //   try {
+  //     const raw = localStorage.getItem(LS_KEY);
+  //     const saved = raw ? JSON.parse(raw) : {};
+  //     return { ...defaults, ...saved };
+  //   } catch {
+  //     return { ...defaults };
+  //   }
+  // });
 
   // Modal + Toast
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -81,25 +109,36 @@ export default function AdminSettings() {
 
   const onSave = () => setConfirmOpen(true);
 
-  const doSave = () => {
-    // Persist locally
-    localStorage.setItem(LS_KEY, JSON.stringify(limits));
+  const doSave = async() => {
+   const token = localStorage.getItem("token");
+  if (!token) {
+    alert("You must log in to save settings");
+    navigate("/login");
+    return;
+  }
 
-    // Prepare API payload using the EXACT hyphenated keys your backend expects
+  try {
     const payload = {
-      "borrow-day-limit": limits["borrow-day-limit"],
-      "borrow-extend-limit": limits["borrow-extend-limit"],
-      "borrow-limit": limits["borrow-limit"],
-      "booking-duration": limits["booking-duration"],
-      "booking-days-limit": limits["booking-days-limit"],
+      borrow_day_limit: limits["borrow-day-limit"],
+      borrow_extend_limit: limits["borrow-extend-limit"],
+      borrow_limit: limits["borrow-limit"],
+      booking_duration: limits["booking-duration"],
+      booking_days_limit: limits["booking-days-limit"],
     };
 
-    // Hook this up to your API call when ready:
-    // await fetch('/api/admin/settings/limits', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
+    await axios.patch("http://localhost:8000/settings/", payload, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
     setConfirmOpen(false);
     setToast({ show: true, msg: "Settings saved successfully." });
     setTimeout(() => setToast({ show: false, msg: "" }), 1800);
+  } catch (error) {
+    console.error("Failed to save settings:", error);
+    setConfirmOpen(false);
+    setToast({ show: true, msg: "Failed to save settings!" });
+    setTimeout(() => setToast({ show: false, msg: "" }), 1800);
+  }
   };
 
   const resetDefaults = () => setLimits({ ...defaults });

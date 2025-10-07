@@ -67,14 +67,14 @@ export default function UserSidebar({ active = "dashboard" }) {
           </li>
         </ul>
       </div>
-      <div>
+      {/* <div>
         <Link
           to="/"
           className="flex items-center gap-2 text-red-600 font-medium hover:underline underline-offset-4"
         >
           <LogOut size={18} /> Logout
         </Link>
-      </div>
+      </div> */}
     </aside>
   );
 }

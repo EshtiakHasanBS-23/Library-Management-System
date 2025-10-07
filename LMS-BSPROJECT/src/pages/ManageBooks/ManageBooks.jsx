@@ -505,12 +505,12 @@ const handleSave = async () => {
 };
 
 
-  /*const requestDelete = (id) => {
+  const requestDelete = (id) => {
     setPendingDeleteId(id);
     setConfirmOpen(true);
   };
 
-  const confirmDelete = () => {
+  /*const confirmDelete = () => {
     if (!pendingDeleteId) return;
     setDisplayed((prev) => prev.filter((x) => x.id !== pendingDeleteId));
     setPendingDeleteId(null);
@@ -547,6 +547,35 @@ const confirmDelete = async () => {
     "flex items-center gap-2 px-3 py-3 text-gray-700 hover:text-sky-500 transition-colors";
   const navItemActive =
     "flex items-center gap-2 px-3 py-3 text-sky-600 font-medium";
+
+
+
+
+  const [categories, setCategories] = useState([]);
+
+useEffect(() => {
+  const fetchCategories = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get("http://localhost:8000/categories/", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setCategories(res.data);
+    } catch (error) {
+      console.error("Failed to load categories:", error);
+    }
+  };
+
+  fetchCategories();
+}, []);
+  // Select suggestion
+  const handleSelect = (name) => {
+    setForm((prev) => ({ ...prev, category: name }));
+    setShowSuggestions(false);
+  };
+
 
   return (
     <div className="min-h-screen flex bg-gray-100">
@@ -719,15 +748,25 @@ const confirmDelete = async () => {
 
                   {/* 3) Category */}
                   <div>
-                    <label className="block text-sm text-gray-700 mb-1">Category</label>
-                    <input
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Category / Genre
+                    </label>
+
+                    <select
                       name="category"
                       value={form.category}
                       onChange={handleChange}
-                      placeholder="category"
-                      className="w-full rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-400"
-                    />
+                      className="w-full px-3 py-2 border rounded-md bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    >
+                      <option value="">Select a category</option>
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.name}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
+
 
                   {/* 4) No of copy */}
                   <div>

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func
+from sqlalchemy import func, and_
 from sqlalchemy.orm import Session, joinedload
-from datetime import datetime
+from datetime import datetime,timedelta
 from LMS import models, schemas
 from LMS.database import get_db
 from LMS.routers.auth import get_current_user,admin_required
@@ -32,14 +32,37 @@ def list_borrows(db: Session = Depends(get_db), current_user: models.User = Depe
 @router.post("/", response_model=schemas.BorrowOut)
 def borrow_book(borrow: schemas.BorrowCreate, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
     book = db.query(models.Book).filter(models.Book.id == borrow.book_id).first()
-    if not book or  book.copies<1:
+    if not book or book.copies < 1:
         raise HTTPException(status_code=400, detail="Book not available")
 
+    
+    existing = db.query(models.Borrow).filter(
+        and_(
+            models.Borrow.user_id == current_user.id,
+            models.Borrow.book_id == book.id,
+            models.Borrow.status == "pending"
+        )
+    ).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="You already have a pending borrow for this book")
+
+    
+    settings = db.query(models.SystemSetting).first()
+    max_days = settings.borrow_day_limit if settings else 14  # default 14 days
+
+    
+    if borrow.return_date:
+        max_allowed_date = datetime.utcnow() + timedelta(days=max_days)
+        return_date = min(borrow.return_date.replace(tzinfo=None), max_allowed_date)
+    else:
+        return_date = datetime.utcnow() + timedelta(days=max_days)
+
+    
     borrow_record = models.Borrow(
         user_id=current_user.id,
         book_id=book.id,
         borrow_date=datetime.utcnow(),
-        return_date=borrow.return_date,
+        return_date=return_date,
         status="pending"
     )
     db.add(borrow_record)
@@ -126,6 +149,35 @@ def my_borrow_list(db: Session = Depends(get_db),current_user: models.User = Dep
 # def my_borrow_list(db: Session = Depends(get_db),current_user: models.User = Depends(get_current_user)):
 #     borrows = db.query(models.Borrow).filter(models.Borrow.user_id == current_user.id).all()
 #     return borrows
+
+
+@router.get("/all-history", response_model=list[schemas.BorrowOut])
+def my_borrow_history(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(admin_required),
+):
+    borrows = (
+        db.query(models.Borrow)
+        .options(joinedload(models.Borrow.book), joinedload(models.Borrow.user))
+        .filter(models.Borrow.status != "rejected")
+        .all()
+    )
+
+    return [
+        {
+            "id": b.id,
+            "user_id": b.user_id,
+            "username": b.user.username,
+            "book_id": b.book_id,
+            "book_title": b.book.title,
+            "borrow_date": b.borrow_date,
+            "return_date": b.return_date,
+            "returned_at": b.returned_at,
+            "status": b.status,
+        }
+        for b in borrows
+    ]
+
 
 @router.get("/my/history", response_model=list[schemas.BorrowOut])
 def my_borrow_history(

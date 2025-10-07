@@ -127,3 +127,23 @@ class DonationBookResponse(DonationBookBase):
     class Config:
         orm_mode = True
 
+
+
+class SystemSettingBase(BaseModel):
+    borrow_day_limit: int
+    borrow_extend_limit: int
+    borrow_limit: int
+    booking_duration: int
+    booking_days_limit: int
+
+class SystemSettingUpdate(BaseModel):
+    borrow_day_limit: int | None = None
+    borrow_extend_limit: int | None = None
+    borrow_limit: int | None = None
+    booking_duration: int | None = None
+    booking_days_limit: int | None = None
+
+class SystemSettingOut(SystemSettingBase):
+    id: int
+    class Config:
+        orm_mode = True

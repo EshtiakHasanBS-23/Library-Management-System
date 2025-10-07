@@ -96,6 +96,7 @@ import {
   LogOut,
   Layers,
   SlidersHorizontal,
+  CheckCircle,
   HandHeart,   // ✅ new icon
 } from "lucide-react";
 
@@ -148,21 +149,27 @@ export default function Sidebar() {
           </li>
 
           <li>
+            <NavLink to="/all-history" className={itemClass}>
+              <CheckCircle size={18} /> History
+            </NavLink>
+          </li>
+
+          <li>
             <NavLink to="/setting" className={itemClass}>
-              <Settings size={18} /> Setting
+              <Settings size={18} /> Settings
             </NavLink>
           </li>
         </ul>
       </div>
 
-      <div>
+      {/* <div>
         <Link
           to="/"
           className="flex items-center gap-2 text-red-600 font-medium hover:underline underline-offset-4"
         >
           <LogOut size={18} /> Logout
         </Link>
-      </div>
+      </div> */}
     </aside>
   );
 }
