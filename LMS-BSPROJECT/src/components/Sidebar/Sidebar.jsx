@@ -152,12 +152,12 @@ export default function Sidebar({ onSelect }) {
     if (expandedKey === category) {
       setExpandedKey(null);
       setActiveCategory(null);
-      setActiveSubcategory(null);
+      // setActiveSubcategory(null);
       if (onSelect) setFilter(null);
     } else {
       setExpandedKey(category);
       setActiveCategory(null);
-      setActiveSubcategory(null);
+      // setActiveSubcategory(null);
       if (onSelect) setFilter(null);
     }
   };
@@ -182,18 +182,18 @@ export default function Sidebar({ onSelect }) {
   };
 
   // You call this in your JSX; keep behavior as-is
-  const handleSubcategory = (sub, parent) => {
-    setActiveCategory(parent);
-    setActiveSubcategory(sub);
-    setFilter({ type: "subcategory", value: sub, parent });
-  };
+  // const handleSubcategory = (sub, parent) => {
+  //   setActiveCategory(parent);
+  //   setActiveSubcategory(sub);
+  //   setFilter({ type: "subcategory", value: sub, parent });
+  // };
 
   // counts (visual hint only — number of subitems)
-  const catCounts = useMemo(() => {
-    const m = {};
-    categories.forEach((c) => (m[c.name] = (c.subcategories || []).length));
-    return m;
-  }, []);
+  // const catCounts = useMemo(() => {
+  //   const m = {};
+  //   categories.forEach((c) => (m[c.name] = (c.subcategories || []).length));
+  //   return m;
+  // }, []);
 
   // Reverse lookup (sub -> parent) to build link text/URL safely
   const subToParent = useMemo(() => {
@@ -213,15 +213,15 @@ export default function Sidebar({ onSelect }) {
       setExpandedKey(catName);
     }
   };
-  const toggleSubcategoryCheckbox = (sub, parent) => {
-    if (activeSubcategory === sub) {
-      setActiveSubcategory(null);
-      const subs = categoryToSubs[parent] || [];
-      setFilter({ type: "category", value: parent, subcategories: subs });
-    } else {
-      handleSubcategory(sub, parent);
-    }
-  };
+  // const toggleSubcategoryCheckbox = (sub, parent) => {
+  //   if (activeSubcategory === sub) {
+  //     setActiveSubcategory(null);
+  //     const subs = categoryToSubs[parent] || [];
+  //     setFilter({ type: "category", value: parent, subcategories: subs });
+  //   } else {
+  //     handleSubcategory(sub, parent);
+  //   }
+  // };
 
   const parseRatingValue = (label) => {
     const m = label.match(/(\d+(?:\.\d+)?)/);
@@ -394,7 +394,7 @@ export default function Sidebar({ onSelect }) {
                       </span>
                     </label>
 
-                    <span className="text-xs text-gray-400 mr-2">({catCounts[cat.name] ?? 0})</span>
+                    {/* <span className="text-xs text-gray-400 mr-2">({catCounts[cat.name] ?? 0})</span> */}
 
                     <button
                       type="button"
@@ -405,10 +405,10 @@ export default function Sidebar({ onSelect }) {
                       aria-label={open ? "Collapse" : "Expand"}
                       className="p-1 rounded hover:bg-white/60"
                     >
-                      <ChevronDown
+                      {/* <ChevronDown
                         size={16}
                         className={`transition-transform duration-200 ${open ? "rotate-180" : ""} text-gray-500`}
-                      />
+                      /> */}
                     </button>
                   </div>
 

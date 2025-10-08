@@ -188,6 +188,7 @@ def _with_category_name(book: models.Book) -> schemas.Book:
         image=book.image,
         pdf=book.pdf,
         audio=book.audio,
+        rating=book.rating
     )
 
 

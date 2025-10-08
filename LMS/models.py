@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime,Text
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime,Text,Float
 from sqlalchemy.orm import relationship
 from LMS.database import Base
 from datetime import datetime
@@ -38,6 +38,7 @@ class Book(Base):
     image = Column(String(255), nullable=True)
     pdf = Column(String(255), nullable=True)
     audio = Column(String(255), nullable=True)
+    rating = Column(Float, default=0) 
 
     category = relationship("Category", back_populates="books")
     borrows = relationship("Borrow", back_populates="book", cascade="all, delete-orphan")

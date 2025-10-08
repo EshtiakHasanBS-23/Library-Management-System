@@ -51,6 +51,7 @@ class Book(BookBase):
     image: Optional[str] = None
     pdf: Optional[str] = None
     audio: Optional[str] = None
+    rating: Optional[float] = 0
     class Config:
         orm_mode = True
 

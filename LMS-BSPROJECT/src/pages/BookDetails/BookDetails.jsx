@@ -1,6 +1,6 @@
 
 // src/pages/BookDetails/BookDetails.jsx
-import React, { useEffect, useRef, useState } from "react";
+import React, { use, useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import {
   Star,
@@ -99,11 +99,14 @@ export default function BookDetails() {
   const [toast, setToast] = useState({ open: false, msg: "" });
 
   // Reviews UI
+  const [pack, setPack] = useState(null);
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
   const [expanded, setExpanded] = useState({});
   const [votes, setVotes] = useState({});
   const [bump, setBump] = useState({});
   const [feedbackToast, setFeedbackToast] = useState({ open: false, type: "", msg: "" });
-
+  
   // Audio player state
   const [isPlaying, setIsPlaying] = useState(false);
   const [curTime, setCurTime] = useState(0);
@@ -178,98 +181,6 @@ export default function BookDetails() {
     return "available";
   };
 
-  /*useEffect(() => {
-    const sliderBook = location.state?.fromSlider;
-
-    fetch("/books.json")
-      .then((res) => res.json())
-      .then((data) => {
-        let active = null;
-
-        if (sliderBook && String(sliderBook.id) === String(id)) {
-          active = sliderBook;
-        } else {
-          active = data.find((b) => String(b.id) === String(id)) || null;
-        }
-
-        if (active) {
-          const n = normalize(active);
-          setBookData(n);
-          setAuthorFollowers(n.authorFollowers);
-        } else {
-          setBookData(null);
-        }
-
-        const others = (data || [])
-          .filter((b) => String(b.id) !== String(id))
-          .slice(0, 3)
-          .map(normalize)
-          .filter(Boolean);
-        setRelatedBooks(others);
-
-        const targetCategory = (active?.category ?? "General").toLowerCase();
-        const totals = (data || []).reduce(
-          (acc, b) => {
-            if ((b.category ?? "General").toLowerCase() !== targetCategory) return acc;
-            acc[bucket(b.status)] += 1;
-            return acc;
-          },
-          { available: 0, upcoming: 0, unavailable: 0 }
-        );
-        setStats(totals);
-      })
-      .catch(() => {});
-  }, [id, location.state]);*/
-
-  
-  /*useEffect(() => {
-  const fetchBook = async () => {
-    try {
-      const token = localStorage.getItem("token"); // Get JWT token
-      const res = await axios.get(`http://localhost:8000/books/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const active = res.data ? normalize(res.data) : null;
-
-      if (active) {
-        setBookData(active);
-        setAuthorFollowers(active.authorFollowers || 16);
-      } else {
-        setBookData(null);
-      }
-
-      // Fetch related books (optional, just an example)
-      const allRes = await axios.get("http://localhost:8000/books", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const others = (allRes.data || [])
-        .filter((b) => String(b.id) !== String(id))
-        .slice(0, 3)
-        .map(normalize)
-        .filter(Boolean);
-      setRelatedBooks(others);
-
-      // Stats for category
-      const targetCategory = (active?.category ?? "General").toLowerCase();
-      const totals = (allRes.data || []).reduce(
-        (acc, b) => {
-          if ((b.category ?? "General").toLowerCase() !== targetCategory) return acc;
-          acc[bucket(b.status)] += 1;
-          return acc;
-        },
-        { available: 0, upcoming: 0, unavailable: 0 }
-      );
-      setStats(totals);
-
-    } catch (err) {
-      console.error("Failed to fetch book details:", err);
-      setBookData(null);
-    }
-  };
-
-  fetchBook();
-}, [id]);*/
 
 const token = localStorage.getItem("token");
 
@@ -489,8 +400,88 @@ useEffect(() => {
       </div>
     );
   }
+  
+  const fetchRatingBreakdown = async () => {
+  if (!bookData?.id) return;
 
-  const pack = REVIEWS_DB[String(bookData.id)] || null;
+  try {
+    const res = await axios.get(`http://localhost:8000/reviews/book/${bookData.id}/rating-breakdown`);
+    const data = res.data;
+    setPack({
+      heading: "Employee Review",
+      total: data.total,
+      overall: data.overall,
+      breakdown: data.breakdown,
+      reviews: data.reviews
+    });
+  } catch (err) {
+    console.error("Failed to fetch rating breakdown:", err);
+  }
+};
+
+
+const fetchReviews = async () => {
+  if (!bookData?.id) return;
+
+  try {
+    const res = await axios.get(`http://localhost:8000/reviews/book/${bookData.id}`, {
+      headers: { Authorization: `Bearer ${token}` } // make sure token exists
+    });
+
+    const data = res.data;
+
+    // Calculate overall rating, total, breakdown
+    const total = data.length;
+    const overall = total > 0 ? data.reduce((sum, r) => sum + r.rating, 0) / total : 0;
+    const breakdown = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    data.forEach(r => { breakdown[r.rating] = (breakdown[r.rating] || 0) + 1; });
+
+    setPack({
+      heading: "Employee Review",
+      total,
+      overall: Math.round(overall * 10) / 10,
+      breakdown,
+      reviews: data
+    });
+  } catch (err) {
+    console.error("Failed to fetch reviews:", err);
+    alert("Failed to load reviews");
+  }
+};
+
+  const submitReview = async () => {
+  if (!rating || !comment) {
+    alert("Please provide a rating and comment");
+    return;
+  }
+
+  try {
+    const res = await axios.post(
+      "http://localhost:8000/reviews/",
+      {
+        book_id: bookData.id,
+        rating,
+        comment
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` } // make sure token exists
+      }
+    );
+
+    // After submission, refresh reviews + rating breakdown
+    fetchReviews();
+    fetchRatingBreakdown();
+    setRating(0);
+    setComment("");
+    alert("Review submitted successfully!");
+  } catch (err) {
+    console.error(err);
+    alert(err.response?.data?.detail || "Failed to submit review");
+  }
+};
+
+  // const pack = REVIEWS_DB[String(bookData.id)] || null;
+console.log("pack:", pack);
   const localReviewCount = pack?.reviews?.length ?? 0;
   const ratingCountDisplay = pack ? localReviewCount : 0;
   const reviewsTextDisplay = pack
@@ -899,14 +890,27 @@ useEffect(() => {
         <div className="lg:col-span-1">
           <div className="">
             <div className="text-sm text-gray-700 font-semibold">Rate this product</div>
-            <div className="mt-2 flex items-center gap-1">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-6 h-6 text-gray-300" />
-              ))}
-            </div>
-            <button className="mt-3 inline-flex items-center border border-gray-300 text-sky-600 text-sm font-medium px-3 py-1.5 rounded-md hover:bg-sky-50">
-              Review Write
-            </button>
+           <div className="mt-2 flex items-center gap-1">
+            {[...Array(5)].map((_, i) => (
+              <Star
+                key={i}
+                className={`w-6 h-6 cursor-pointer ${i < rating ? "text-yellow-500 fill-yellow-500" : "text-gray-300"}`}
+                onClick={() => setRating(i + 1)}
+              />
+            ))}
+          </div>
+          <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            className="w-full border rounded p-2 mt-2"
+            placeholder="Write your review..."
+          />
+          <button
+            className="mt-3 inline-flex items-center border border-gray-300 text-sky-600 text-sm font-medium px-3 py-1.5 rounded-md hover:bg-sky-50"
+            onClick={submitReview}
+          >
+            Review Write
+          </button>
           </div>
 
           {!pack || pack.total === 0 ? (

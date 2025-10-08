@@ -443,7 +443,7 @@ export default function Dashboard() {
               <thead>
                 <tr className="text-left border-b border-gray-200">
                   <th className="w-10">#</th>
-                  <th className="w-18">Book name</th>
+                  <th className="w-25">Book name</th>
                   <th className="w-10">User name</th>
                   <th className="text-center">Email</th>
                   <th className="w-10">Returned Date</th>
@@ -572,9 +572,9 @@ export default function Dashboard() {
                     {confirm.index > -1 && (
                       <p className="mt-1 text-sm text-gray-600">
                         <span className="font-medium">
-                          {requests[confirm.index]?.book_id}
+                          {requests[confirm.index]?.book_title}
                         </span>{" "}
-                        — {requests[confirm.index]?.user_id}
+                        — {requests[confirm.index]?.username}
                       </p>
                     )}
                   </div>

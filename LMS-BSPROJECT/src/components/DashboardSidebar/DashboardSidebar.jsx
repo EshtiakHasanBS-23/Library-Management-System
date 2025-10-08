@@ -136,11 +136,11 @@ export default function Sidebar() {
             </NavLink>
           </li>
 
-          <li>
+          {/* <li>
             <NavLink to="/manage-feature" className={itemClass}>
               <SlidersHorizontal size={18} /> Manage Feature
             </NavLink>
-          </li>
+          </li> */}
 
           <li>
             <NavLink to="/user" className={itemClass}>
