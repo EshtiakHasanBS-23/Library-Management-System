@@ -344,7 +344,7 @@ useEffect(() => {
                       }
                     }}
                   >
-                    {user ? "Sign Out" : "Sign In"}   {/* ✅ toggle label */}
+                    {user ? "Sign Out" : "Sign In"} 
                   </button>
                 </div>
               </div>

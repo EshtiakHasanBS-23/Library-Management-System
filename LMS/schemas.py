@@ -87,6 +87,8 @@ class ReviewOut(BaseModel):
     book_id: int
     rating: int
     comment: Optional[str] = None
+    username: str
+    created_at: datetime
 
     class Config:
         orm_mode = True

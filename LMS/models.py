@@ -65,8 +65,9 @@ class Review(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
     rating = Column(Integer, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
     comment = Column(Text, nullable=True)
-
+    username = Column(String(50), nullable=False)
     user = relationship("User", back_populates="reviews")
     book = relationship("Book", back_populates="reviews")
 

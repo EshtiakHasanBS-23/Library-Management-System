@@ -43,6 +43,19 @@ def get_books(db: Session = Depends(get_db)):
     return _with_category_names(books)
 
 
+@router.get("/popular", response_model=list[schemas.Book])
+def get_popular_books(db: Session = Depends(get_db)):
+    books = db.query(models.Book).order_by(models.Book.rating.desc()).limit(20).all()
+    return _with_category_names(books)
+
+
+# 🆕 Get new collection — most recently added books
+@router.get("/new", response_model=list[schemas.Book])
+def get_new_books(db: Session = Depends(get_db)):
+    books = db.query(models.Book).order_by(models.Book.created_at.desc()).limit(20).all()
+    return _with_category_names(books)
+
+
 @router.get("/{book_id}", response_model=schemas.Book)
 def get_book(book_id: int, db: Session = Depends(get_db),current_user = Depends(get_current_user)):
     book = db.query(models.Book).filter(models.Book.id == book_id).first()

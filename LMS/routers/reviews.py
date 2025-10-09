@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from datetime import datetime   
 from sqlalchemy import func
 from LMS import models, schemas
 from LMS.database import get_db
@@ -25,9 +26,11 @@ def add_review(review: schemas.ReviewCreate, db: Session = Depends(get_db), curr
     # Add new review
     new_review = models.Review(
         user_id=current_user.id,
+        username=current_user.username,
         book_id=book.id,
         rating=review.rating,
-        comment=review.comment
+        comment=review.comment,
+        created_at=datetime.utcnow()
     )
     db.add(new_review)
     db.commit()

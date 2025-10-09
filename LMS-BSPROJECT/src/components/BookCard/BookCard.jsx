@@ -86,6 +86,7 @@ export default function BookCard({ book, compact = false }) {
 // MEDIA_DIR = "media/uploads"
   // ----- status -----
   const getStatus = (b) => {
+    if(b.copies < 1) return "Stock Out";
     if (typeof b?.inStock === "boolean") return b.inStock ? "Available" : "Stock Out";
     const s = (b?.status || "").toString().trim().toLowerCase();
     if (s.includes("out")) return "Stock Out";

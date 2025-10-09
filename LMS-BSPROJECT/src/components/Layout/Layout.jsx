@@ -132,7 +132,7 @@ export default function Layout() {
   const location = useLocation();
   const isBookDetailsPage = location.pathname.startsWith("/book/");
   const isHomePage = location.pathname === "/";
-
+ 
   // If you want a dynamic title, swap this with your own logic:
   const pageTitle = "Dashboard";
 

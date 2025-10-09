@@ -23,64 +23,44 @@ export default function Home() {
   const [openMenuId, setOpenMenuId] = useState(null); // kebab menu per-card
   const navigate = useNavigate();
   const [allBooks, setAllBooks] = useState([]);
-  // ----- data for global filtered state (unchanged) -----
-  /*const allBooks = useMemo(
-    () => [...(books?.recommended || []), ...(books?.popular || [])],
-    []
-  );*/
+  const [popularBooks, setPopularBooks] = useState([]);
 
-
-  //   useEffect(() => {
-  //   const fetchBooks = async () => {
-  //     try {
-  //       const res = await axios.get("http://localhost:8000/books",);
-  //       const data = res.data || [];
-  //       // Fix images by prepending media path
-  //       const normalized = data.map((b) => ({
-  //         ...b,
-  //         coverImage: b.image
-  //           ? `http://localhost:8000/media/${b.image}`
-  //           : "https://via.placeholder.com/150",
-  //       }));
-  //       setAllBooks(normalized);
-  //     } catch (err) {
-  //       console.error("Failed to fetch books:", err);
-  //       // fallback to placeholder data
-  //       setAllBooks(
-  //         booksPlaceholder.recommended.map((b) => ({
-  //           ...b,
-  //           coverImage: b.image || "https://via.placeholder.com/150",
-  //         }))
-  //       );
-  //     }
-  //   };
-  //   fetchBooks();
-  // }, []);
 
   useEffect(() => {
   const fetchBooks = async () => {
     try {
-      const [booksRes, categoriesRes] = await Promise.all([
+      // Fetch all books, popular books, and categories
+      const [booksRes, popularRes, categoriesRes] = await Promise.all([
         axios.get("http://localhost:8000/books"),
+        axios.get("http://localhost:8000/books/popular"),
         axios.get("http://localhost:8000/categories")
       ]);
 
       const categories = categoriesRes.data;
-      const data = booksRes.data;
+      const allData = booksRes.data;
+      const popularData = popularRes.data;
 
-      const normalized = data.map((b) => {
-        const category = categories.find(c => c.id === b.category_id)?.name || "Unknown";
-        return {
-          ...b,
-          category, // add category name
-          coverImage: b.image ? `http://localhost:8000/media/${b.image}` : "https://via.placeholder.com/150",
-        };
-      });
+      // Normalize both book lists
+      const normalize = (data) =>
+        data.map((b) => {
+          const category = categories.find(c => c.id === b.category_id)?.name || "Unknown";
+          return {
+            ...b,
+            category,
+            coverImage: b.image
+              ? `http://localhost:8000/media/${b.image}`
+              : "https://via.placeholder.com/150",
+          };
+        });
 
-      setAllBooks(normalized);
+      setAllBooks(normalize(allData));
+
+      setPopularBooks(normalize(popularData));
+
     } catch (err) {
       console.error("Failed to fetch books:", err);
       setAllBooks([]);
+      setPopularBooks([]);
     }
   };
 
@@ -127,8 +107,8 @@ export default function Home() {
   // Data
   /*const recommended = books?.recommended || [];
   const popular = books?.popular || [];*/
-  const recommended = allBooks.slice(0, 6); // first 6 books as "recommended"
-  const popular = allBooks.slice(6, 12);    // next 6 books as "popular"
+  const recommended = allBooks.slice(0, 12); // first 6 books as "recommended"
+  const popular = popularBooks.slice(0, 12);    // next 6 books as "popular"
 
   // status helper
   const getStatus = (b) => {

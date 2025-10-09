@@ -263,18 +263,8 @@ useEffect(() => {
   // init votes when book changes
   useEffect(() => {
     if (!bookData?.id) return;
-    const p = REVIEWS_DB[String(bookData.id)];
-    if (p?.reviews) {
-      const next = {};
-      p.reviews.forEach((r) => {
-        next[r.id] = { up: r.helpful || 0, down: 0, my: null };
-      });
-      setVotes(next);
-      setExpanded({});
-    } else {
-      setVotes({});
-      setExpanded({});
-    }
+    fetchRatingBreakdown();
+    fetchReviews(); 
   }, [bookData?.id]);
 
   // close the read box when clicking outside
@@ -481,7 +471,6 @@ const fetchReviews = async () => {
 };
 
   // const pack = REVIEWS_DB[String(bookData.id)] || null;
-console.log("pack:", pack);
   const localReviewCount = pack?.reviews?.length ?? 0;
   const ratingCountDisplay = pack ? localReviewCount : 0;
   const reviewsTextDisplay = pack
@@ -632,7 +621,7 @@ console.log("pack:", pack);
           <div className="mt-6">
             <span className="text-green-600 font-medium text-sm inline-flex items-center">
               <span className="h-3 w-3 bg-green-500 rounded-full animate-ping mr-2"></span>
-              Available
+              {bookData.copies > 0 ? "Available" : "Stock Out"}
             </span>
 
             {/* Audio row */}
@@ -914,6 +903,7 @@ console.log("pack:", pack);
           </div>
 
           {!pack || pack.total === 0 ? (
+            console.log("No reviews available"),
             <div className="text-sm text-gray-500 mt-6">No reviews yet for this book.</div>
           ) : (
             <div className="space-y-6 mt-10 sm:mt-20">
@@ -921,7 +911,7 @@ console.log("pack:", pack);
                 const isLong = (r.body || "").length > 220;
                 const open = !!expanded[r.id];
                 const body = !isLong || open ? r.body : r.body.slice(0, 220) + "…";
-                const firstLetter = r.name?.trim()?.[0]?.toUpperCase() || "?";
+                const firstLetter = r.username?.trim()?.[0]?.toUpperCase() || "?";
                 const v = votes[r.id] || { up: r.helpful || 0, down: 0, my: null };
                 return (
                   <article key={r.id} className="border-b border-gray-300 pb-6">
@@ -931,14 +921,18 @@ console.log("pack:", pack);
                       </div>
                       <div className="flex-1">
                         <div className="text-sm">
-                          <span className="font-semibold text-gray-900">{r.name}</span>
+                          <span className="font-semibold text-gray-900">{r.username}</span>
                           <span className="text-gray-500 ml-1.5">{r.country}</span>
                         </div>
+
+                         <div className="text-sm">
+                          <span>{r.comment}</span>
+                        </div>
                         <div className="flex items-center gap-1 text-xs mt-0.5 text-gray-500">
-                          {renderStars(r.stars)}
-                          <span className="ml-1 font-medium">{r.stars.toFixed(1)}</span>
+                          {renderStars(r.rating)}
+                          <span className="ml-1 font-medium">{r.rating.toFixed(1)}</span>
                           <span className="text-gray-300 mx-1">|</span>
-                          <time dateTime={r.date}>{r.date}</time>
+                          <time dateTime={r.created_at}>{r.created_at}</time>
                         </div>
                       </div>
                     </div>
@@ -1022,7 +1016,7 @@ console.log("pack:", pack);
                 ))}
               </div>
 
-              {pack.images.length > 0 && (
+              {/* {pack.images.length > 0 && (
                 <div className="mt-8">
                   <h5 className="text-sm font-semibold text-gray-700">Images from reviews</h5>
                   <div className="flex overflow-x-auto gap-3 mt-3 pb-2 scrollbar-hide">
@@ -1038,7 +1032,7 @@ console.log("pack:", pack);
                     ))}
                   </div>
                 </div>
-              )}
+              )} */}
             </div>
           )}
         </div>
