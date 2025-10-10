@@ -235,6 +235,25 @@ export default function Dashboard() {
   const mm = String(now.getMinutes()).padStart(2, "0");
   const ss = String(now.getSeconds()).padStart(2, "0");
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 5; // change this to show more/less per page
+
+  // Calculate indexes
+  const totalPages = Math.ceil(requests.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = startIndex + rowsPerPage;
+  const currentRows = requests.slice(startIndex, endIndex);
+
+  // Page change handlers
+  const handlePrev = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+
+  const handleNext = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
+  
+   
   return (
     <div className="min-h-screen flex bg-gray-100">
       {/* Sidebar */}
@@ -483,9 +502,9 @@ export default function Dashboard() {
         <div className="bg-white rounded shadow p-4">
           <div className="flex justify-between items-center mb-2">
             <h3 className="font-semibold">Borrow Request</h3>
-            <Link to="#" className="text-xs text-green-600 hover:underline">
+            {/* <Link to="#" className="text-xs text-green-600 hover:underline">
               View All
-            </Link>
+            </Link> */}
           </div>
           <table className="w-full text-sm">
             <thead>
@@ -499,9 +518,9 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {requests.map((r, i) => (
+              {currentRows.map((r, i) => (
                 <tr key={`${r.book}__${r.user}__${i}`} className="border-b border-gray-200">
-                  <td>{i + 1}</td>
+                  <td>{startIndex + i + 1}</td>
                   <td className="font-medium">{r.book_title}</td>
                   <td>{r.username}</td>
                   <td>{r.borrow_date.split('T')[0]}</td>
@@ -535,6 +554,41 @@ export default function Dashboard() {
                 </tr>
               )}
             </tbody>
+            {requests.length > rowsPerPage && (
+        <tfoot>
+          <tr>
+            <td colSpan={6} className="py-4 text-center">
+              <div className="flex justify-center items-center gap-4">
+                <button
+                  onClick={handlePrev}
+                  disabled={currentPage === 1}
+                  className={`px-3 py-1 rounded-md text-sm font-medium ${
+                    currentPage === 1
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-sky-500 text-white hover:bg-sky-600"
+                  }`}
+                >
+                  Prev
+                </button>
+                <span className="text-gray-600 text-sm">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={handleNext}
+                  disabled={currentPage === totalPages}
+                  className={`px-3 py-1 rounded-md text-sm font-medium ${
+                    currentPage === totalPages
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-sky-500 text-white hover:bg-sky-600"
+                  }`}
+                >
+                  Next
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tfoot>
+      )}
           </table>
         </div>
       </main>

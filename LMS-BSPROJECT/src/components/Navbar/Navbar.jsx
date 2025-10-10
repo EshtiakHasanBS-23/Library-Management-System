@@ -13,8 +13,9 @@ import {
 } from "lucide-react";
 import { CgMenuGridR } from "react-icons/cg";
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useContext } from "react";
 import AppLauncherMenu from "./AppLauncherMenu"; 
+import { UserContext } from "../../context/UserContext.jsx";
 import axios from "axios";
 export default function Navbar() {
   const navigate = useNavigate();
@@ -42,20 +43,8 @@ export default function Navbar() {
   //     return null;
   //   }
   // });
-  const [user, setUser] = useState(null);
+ const { user, setUser } = useContext(UserContext);
 
-useEffect(() => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    // fetch user info from backend
-    axios
-      .get("http://localhost:8000/users/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => setUser(res.data))
-      .catch(() => setUser(null));
-  }
-}, []);
 
   // Load books for search
   useEffect(() => {
@@ -178,7 +167,7 @@ useEffect(() => {
         <div className="flex items-center gap-3 sm:gap-4 h-full" ref={searchRef}>
           {/* Upload (unchanged) */}
           <Link
-            to="/upload"
+            to={user?.username === "admin" ? "/manage-books" : "/upload"}
             className="flex items-center gap-1 px-3 py-1 sm:px-4 sm:py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-full text-sm sm:text-base"
           >
             <Upload className="w-4 h-4" />
@@ -310,7 +299,8 @@ useEffect(() => {
                       className="w-full text-left px-4 py-2 hover:bg-gray-50 text-gray-700"
                       onClick={() => {
                         setOpenUser(false);
-                        navigate("/dashboard");
+                        if(user.username==="admin")navigate("/dashboard");
+                        else navigate("/user")
                       }}
                     >
                       Dashboard
@@ -321,7 +311,8 @@ useEffect(() => {
                       className="w-full text-left px-4 py-2 hover:bg-gray-50 text-gray-700"
                       onClick={() => {
                         setOpenUser(false);
-                        navigate("/upload");
+                        if(user.username==="admin") navigate("/manage-books")
+                        else  navigate("/upload");
                       }}
                     >
                       Upload a Book

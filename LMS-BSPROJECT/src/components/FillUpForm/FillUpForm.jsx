@@ -126,7 +126,7 @@ const handleSubmit = async () => {
 
     console.log("Borrowed successfully:", res.data);
     alert("Book borrowed successfully!");
-    navigate("/dashboard");
+    navigate("/user");
   } catch (error) {
     console.error("Failed to borrow book:", error.response?.data || error);
     alert("Borrow failed!");

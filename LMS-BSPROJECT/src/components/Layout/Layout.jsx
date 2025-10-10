@@ -127,6 +127,8 @@ import Navbar from "../Navbar/Navbar";
 import Footer from "../Footer/Footer";
 import Newsletter from "../Newsletter/Newsletter";
 import Sidebar from "../Sidebar/Sidebar";
+import { useContext } from "react";
+import { UserContext } from "../../context/UserContext.jsx";
 
 export default function Layout() {
   const location = useLocation();
@@ -135,7 +137,8 @@ export default function Layout() {
  
   // If you want a dynamic title, swap this with your own logic:
   const pageTitle = "Dashboard";
-
+  const { user } = useContext(UserContext);
+  console.log(user);
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Fixed Navbar */}
@@ -184,10 +187,10 @@ export default function Layout() {
             <nav className="flex items-center py-2 text-sm" aria-label="Breadcrumb">
               <ol className="inline-flex items-center space-x-1 sm:space-x-2">
                 <li>
-                  <Link
-                    to="/dashboard"
-                    className="text-gray-600 hover:text-sky-600 hover:underline transition-colors"
-                  >
+                      <Link
+                        to={user?.username === "admin" ? "/dashboard" : "/user"}
+                        className="text-gray-600 hover:text-sky-600 hover:underline transition-colors"
+                      >
                     Dashboard
                   </Link>
                 </li>
