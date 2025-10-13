@@ -340,7 +340,8 @@ export default function DonationRequest() {
       bookTitle: updatedDonation.title,
     };
     const nextHistory = [entry, ...history];
-
+    setItems(nextItems);
+    setHistory(nextHistory);
     persist(nextItems, nextHistory);
 
     showToast(action, `${action === "accepted" ? "Accepted" : "Rejected"}: ${updatedDonation.username || "Request"}`);

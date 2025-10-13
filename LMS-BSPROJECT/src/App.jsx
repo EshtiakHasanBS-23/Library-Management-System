@@ -129,6 +129,7 @@
 
 
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute.jsx';
 import Home from './pages/Home/Home';
 import Navbar from './components/Navbar/Navbar';
 import BookDetails from './pages/BookDetails/BookDetails';
@@ -167,22 +168,22 @@ function AppContent() {
           {!hideLayout && (
             <Route element={<Layout />}>
               <Route path="/" element={<Home />} />
-              <Route path="/book/:id" element={<BookDetails />} />
+              <Route path="/book/:id" element={ <ProtectedRoute><BookDetails /></ProtectedRoute>} />
               <Route path="/borrowed" element={<Borrowed />} />
-              <Route path="/fill-up-form" element={<FillUpForm />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/upload" element={<UploadBookPage />} />
+              <Route path="/fill-up-form" element={ <ProtectedRoute userOnly={true}><FillUpForm /></ProtectedRoute>} />
+              <Route path="/dashboard" element={ <ProtectedRoute adminOnly={true}><Dashboard/></ProtectedRoute>} />
+              <Route path="/upload" element={ <ProtectedRoute userOnly={true}><UploadBookPage /></ProtectedRoute>} />
               <Route path="/all-genres" element={<AllGenres />} />
-              <Route path="/manage-books" element={<ManageBooks />} />
-              <Route path="/manage-category" element={<ManageCategory />} />
-              <Route path="/user" element={<UserDashboard />} />
-              <Route path="/loans" element={<MyLoansBlank />} />
-              <Route path="/settings" element={<UserSettings />} />
-              <Route path="/history" element={<UserHistory />} />
-              <Route path="/all-history" element={<AdminHistory />} />
-              <Route path="/setting" element={<AdminSettings />} />
+              <Route path="/manage-books" element={ <ProtectedRoute adminOnly={true}><ManageBooks /></ProtectedRoute>} />
+              <Route path="/manage-category" element={ <ProtectedRoute adminOnly={true}><ManageCategory /></ProtectedRoute>} />
+              <Route path="/user" element={ <ProtectedRoute userOnly={true}><UserDashboard /></ProtectedRoute>} />
+              <Route path="/loans" element={ <ProtectedRoute userOnly={true}><MyLoansBlank /></ProtectedRoute>} />
+              <Route path="/settings" element={ <ProtectedRoute userOnly={true}><UserSettings /></ProtectedRoute>} />
+              <Route path="/history" element={ <ProtectedRoute userOnly={true}><UserHistory /></ProtectedRoute>} />
+              <Route path="/all-history" element={ <ProtectedRoute adminOnly={true}><AdminHistory /></ProtectedRoute>} />
+              <Route path="/setting" element={ <ProtectedRoute adminOnly={true}><AdminSettings /></ProtectedRoute>} />
               <Route path="/manage-feature" element={<ManageFeature />} />
-              <Route path="/donation-request" element={<DonationRequest />} />
+              <Route path="/donation-request" element={ <ProtectedRoute adminOnly={true}><DonationRequest /></ProtectedRoute>} />
               <Route path="/authgate" element={<AuthGate />} />
               <Route path="/calendar" element={<CalendarPage />} />
             </Route>

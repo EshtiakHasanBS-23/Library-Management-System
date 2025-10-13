@@ -76,16 +76,14 @@ export default function Login() {
       const res = await axios.post("http://localhost:8000/token", formData, {
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
       });
- 
+      
       const token = res.data.access_token;
       localStorage.setItem("token", token);
-      const userRes = await axios.get("http://localhost:8000/users/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
- 
+      const userRes = await axios.get("http://localhost:8000/users/me", { headers: { Authorization: `Bearer ${token}` } });
       localStorage.setItem("user", JSON.stringify(userRes.data));
       setUser(userRes.data);
-      if (userRes.data.username === "admin" || userRes.data.role === "admin") {
+
+      if (userRes.data.is_admin) {
         navigate("/dashboard");
       } else {
         navigate("/");

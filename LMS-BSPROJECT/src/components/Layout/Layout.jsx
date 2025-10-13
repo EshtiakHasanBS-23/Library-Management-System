@@ -138,7 +138,6 @@ export default function Layout() {
   // If you want a dynamic title, swap this with your own logic:
   const pageTitle = "Dashboard";
   const { user } = useContext(UserContext);
-  console.log(user);
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Fixed Navbar */}
@@ -188,7 +187,7 @@ export default function Layout() {
               <ol className="inline-flex items-center space-x-1 sm:space-x-2">
                 <li>
                       <Link
-                        to={user?.username === "admin" ? "/dashboard" : "/user"}
+                        to={user?.is_admin ? "/dashboard" : "/user"}
                         className="text-gray-600 hover:text-sky-600 hover:underline transition-colors"
                       >
                     Dashboard
