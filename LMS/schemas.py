@@ -52,6 +52,7 @@ class Book(BookBase):
     pdf: Optional[str] = None
     audio: Optional[str] = None
     rating: Optional[float] = 0
+    is_featured: Optional[bool] = False
     class Config:
         orm_mode = True
 

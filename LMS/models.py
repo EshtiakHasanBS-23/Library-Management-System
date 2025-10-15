@@ -39,6 +39,7 @@ class Book(Base):
     pdf = Column(String(255), nullable=True)
     audio = Column(String(255), nullable=True)
     rating = Column(Float, default=0) 
+    is_featured = Column(Boolean, default=False)
 
     category = relationship("Category", back_populates="books")
     borrows = relationship("Borrow", back_populates="book", cascade="all, delete-orphan")

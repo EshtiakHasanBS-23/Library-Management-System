@@ -42,6 +42,11 @@ def get_books(db: Session = Depends(get_db)):
     books=db.query(models.Book).all()
     return _with_category_names(books)
 
+@router.get("/featured_book", response_model=list[schemas.Book])
+def get_books(db: Session = Depends(get_db)):
+    books=db.query(models.Book).filter(models.Book.is_featured==True).all()
+    return _with_category_names(books)
+
 
 @router.get("/popular", response_model=list[schemas.Book])
 def get_popular_books(db: Session = Depends(get_db)):
@@ -186,6 +191,18 @@ def delete_book(book_id: int, db: Session = Depends(get_db), current_user = Depe
     return {"message": "Book deleted"}
 
 
+@router.patch("/{book_id}/feature", response_model=schemas.Book)
+def toggle_featured(book_id: int, featured: bool, db: Session = Depends(get_db), user=Depends(admin_required)):
+    book = db.query(models.Book).filter(models.Book.id == book_id).first()
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+    book.is_featured = featured
+    db.commit()
+    db.refresh(book)
+    return _with_category_name(book)
+
+
+
 def _with_category_name(book: models.Book) -> schemas.Book:
     """Attach category name to a single book."""
     category_name = book.category.name if book.category else None
@@ -201,7 +218,8 @@ def _with_category_name(book: models.Book) -> schemas.Book:
         image=book.image,
         pdf=book.pdf,
         audio=book.audio,
-        rating=book.rating
+        rating=book.rating,
+        is_featured=book.is_featured
     )
 
 

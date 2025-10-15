@@ -182,7 +182,7 @@ function AppContent() {
               <Route path="/history" element={ <ProtectedRoute userOnly={true}><UserHistory /></ProtectedRoute>} />
               <Route path="/all-history" element={ <ProtectedRoute adminOnly={true}><AdminHistory /></ProtectedRoute>} />
               <Route path="/setting" element={ <ProtectedRoute adminOnly={true}><AdminSettings /></ProtectedRoute>} />
-              <Route path="/manage-feature" element={<ManageFeature />} />
+              <Route path="/manage-feature" element={ <ProtectedRoute adminOnly={true}><ManageFeature /></ProtectedRoute>} />
               <Route path="/donation-request" element={ <ProtectedRoute adminOnly={true}><DonationRequest /></ProtectedRoute>} />
               <Route path="/authgate" element={<AuthGate />} />
               <Route path="/calendar" element={<CalendarPage />} />

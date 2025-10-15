@@ -97,10 +97,30 @@ import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import books from "../../data/sampleBooks";
 import { Link } from "react-router-dom";
+import axios from "axios";
 
 const FeaturedBanner = () => {
-  const featured = books.featuredBooks;
+  const [featured, setFeatured] = useState([]);
   const [current, setCurrent] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFeaturedBooks = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get("http://localhost:8000/books/featured_book", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setFeatured(res.data || []);
+      } catch (err) {
+        console.error("Failed to fetch featured books:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeaturedBooks();
+  }, []);
 
   useEffect(() => {
     if (featured.length === 0) return;
@@ -123,14 +143,14 @@ const FeaturedBanner = () => {
   };
 
   const currentBook = featured[current];
-  const isOutOfStock = currentBook.availability.toLowerCase().includes("out of stock");
+  // const isOutOfStock = currentBook.availability.toLowerCase().includes("out of stock");
 
   return (
     <div className="bg-white py-12 sm:py-20 px-4 sm:px-6 lg:px-8 relative flex justify-center items-center">
       <div className="max-w-7xl w-full mx-auto flex flex-col lg:flex-row items-center justify-center gap-6 sm:gap-12">
         <div className="shadow-lg rounded-md overflow-hidden w-full sm:w-64 flex-shrink-0 max-w-xs sm:max-w-none">
           <img
-            src={currentBook.image}
+            src={currentBook.image ? `http://localhost:8000${currentBook.image}` : 'https://via.placeholder.com/150'  }
             alt={currentBook.title}
             className="w-full h-64 sm:h-[350px] object-cover"
           />
@@ -146,11 +166,11 @@ const FeaturedBanner = () => {
 
           <div className="flex items-center justify-center lg:justify-start mb-4">
             <span className="relative flex h-3 w-3 mr-2">
-              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isOutOfStock ? "bg-red-400" : "bg-green-400"} opacity-75`}></span>
-              <span className={`relative inline-flex rounded-full h-3 w-3 ${isOutOfStock ? "bg-red-500" : "bg-green-500"}`}></span>
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${currentBook.copies ? "bg-red-400" : "bg-green-400"} opacity-75`}></span>
+              <span className={`relative inline-flex rounded-full h-3 w-3 ${currentBook.copies ? "bg-red-500" : "bg-green-500"}`}></span>
             </span>
-            <span className={`font-medium ${isOutOfStock ? "text-red-600" : "text-green-600"}`}>
-              {currentBook.availability}
+            <span className={`font-medium ${currentBook.copies ? "text-red-600" : "text-green-600"}`}>
+              {currentBook.copies>0 ? "Available" : "Out of Stock"}
             </span>
           </div>
 
